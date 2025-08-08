@@ -30,5 +30,5 @@ func main() {
 		fmt.Printf("\033[31m%v\033[0m\n", err)
 		return
 	}
-	prettyPrint(data, *fullFlag)
+	prettyPrint(data, *fullFlag, *daysFlag)
 }

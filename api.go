@@ -9,105 +9,35 @@ import (
 	"time"
 )
 
+type StatItem struct {
+	Digital      string  `json:"digital"`
+	Hours        int     `json:"hours"`
+	Minutes      int     `json:"minutes"`
+	Name         string  `json:"name"`
+	Percent      float64 `json:"percent"`
+	Seconds      int     `json:"seconds"`
+	Text         string  `json:"text"`
+	TotalSeconds float64 `json:"total_seconds"`
+}
+
 type SummaryResponse struct {
 	Data []struct {
-		Branches []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"branches"`
-		Categories []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"categories"`
-		Dependencies []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"dependencies"`
-		Editors []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"editors"`
-		Entities []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"entities"`
-		GrandTotal struct {
+		Branches         []StatItem `json:"branches"`
+		Categories       []StatItem `json:"categories"`
+		Dependencies     []StatItem `json:"dependencies"`
+		Editors          []StatItem `json:"editors"`
+		Entities         []StatItem `json:"entities"`
+		Languages        []StatItem `json:"languages"`
+		Machines         []StatItem `json:"machines"`
+		OperatingSystems []StatItem `json:"operating_systems"`
+		Projects         []StatItem `json:"projects"`
+		GrandTotal       struct {
 			Digital      string  `json:"digital"`
 			Hours        int     `json:"hours"`
 			Minutes      int     `json:"minutes"`
 			Text         string  `json:"text"`
 			TotalSeconds float64 `json:"total_seconds"`
 		} `json:"grand_total"`
-		Languages []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"languages"`
-		Machines []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"machines"`
-		OperatingSystems []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"operating_systems"`
-		Projects []struct {
-			Digital      string  `json:"digital"`
-			Hours        int     `json:"hours"`
-			Minutes      int     `json:"minutes"`
-			Name         string  `json:"name"`
-			Percent      float64 `json:"percent"`
-			Seconds      int     `json:"seconds"`
-			Text         string  `json:"text"`
-			TotalSeconds float64 `json:"total_seconds"`
-		} `json:"projects"`
 		Range struct {
 			Date     string `json:"date"`
 			End      string `json:"end"`
@@ -116,6 +46,20 @@ type SummaryResponse struct {
 			Timezone string `json:"timezone"`
 		} `json:"range"`
 	} `json:"data"`
+	End             string `json:"end"`
+	Start           string `json:"start"`
+	CumulativeTotal struct {
+		Digital string `json:"digital"`
+		Seconds int    `json:"seconds"`
+		Text    string `json:"text"`
+	} `json:"cumulative_total"`
+	DailyAverage struct {
+		DaysIncludingHolidays int    `json:"days_including_holidays"`
+		DaysMinusHolidays     int    `json:"days_minus_holidays"`
+		Holidays              int    `json:"holidays"`
+		Seconds               int    `json:"seconds"`
+		Text                  string `json:"text"`
+	} `json:"daily_average"`
 }
 
 func fetchStats(apiKey, apiURL string, days int) (*SummaryResponse, error) {
@@ -124,7 +68,6 @@ func fetchStats(apiKey, apiURL string, days int) (*SummaryResponse, error) {
 	todayDate := today.Format("2006-01-02")
 	startDate := today.AddDate(0, 0, -days+1).Format("2006-01-02")
 	requestURL := fmt.Sprintf("%s/v1/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
-	fmt.Println("Request URL:", requestURL)
 	req, err := http.NewRequest("GET", requestURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create request: %w", err)
