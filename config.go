@@ -42,15 +42,17 @@ func parseConfig() (string, string, error) {
 	}
 
 	if apiURL == "" {
-		apiURL = "https://wakapi.dev/api"
-	}
-
-	if !strings.HasSuffix(apiURL, "/") {
-		apiURL += "/"
+		return "", "", fmt.Errorf("api_url not found in config")
 	}
 
 	if apiKey == "" {
 		return "", "", fmt.Errorf("api_key not found in config")
+	}
+
+	apiURL = strings.TrimSuffix(apiURL, "/")
+
+	if apiURL == "https://wakapi.dev/api" {
+		apiURL = "https://wakapi.dev/api/compat/wakatime"
 	}
 
 	return apiURL, apiKey, nil
