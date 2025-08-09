@@ -16,40 +16,39 @@ const (
 	BAR_CHAR  = "🬋" // ❙ 🬋 ▆ ❘ ❚ █ ━ ▭ ╼
 )
 
-func prettyPrint(data *SummaryResponse, full bool, days int) {
+func displaySummary(data *SummaryResponse, full bool, days int) {
 	if len(data.Data) == 0 {
 		fmt.Println(yellow + "No data available for the selected period." + reset)
 		return
 	}
 	summary := data.Data[len(data.Data)-1]
 
-	topEditor := "None"
-	if len(summary.Editors) > 0 {
-		topEditor = summary.Editors[0].Name
-	}
-	topOS := "None"
-	if len(summary.OperatingSystems) > 0 {
-		topOS = summary.OperatingSystems[0].Name
-	}
-	topProject := "None"
-	if len(summary.Projects) > 0 {
-		topProject = summary.Projects[0].Name
-	}
-	codingTime := "0 secs"
-	for _, cat := range summary.Categories {
-		if cat.Name == "coding" {
-			codingTime = cat.Text
-			break
-		}
-	}
 	heading := "Today"
 	if days > 1 {
 		heading = fmt.Sprintf("Last %d days", days)
 	}
+
+	topEditor := "None"
+	if len(summary.Editors) > 0 {
+		topEditor = summary.Editors[0].Name
+	}
+
+	topOS := "None"
+	if len(summary.OperatingSystems) > 0 {
+		topOS = summary.OperatingSystems[0].Name
+	}
+
+	topProject := "None"
+	if len(summary.Projects) > 0 {
+		topProject = summary.Projects[0].Name
+	}
+
+	totalTime := timeFmt(data.CumulativeTotal.Seconds)
+
 	rightSide := []string{
 		blue + heading + reset,
 		strings.Repeat("-", len(heading)),
-		blue + "Coding Time  " + reset + codingTime,
+		blue + "Total Time   " + reset + totalTime,
 		blue + "Top Project  " + reset + topProject,
 		blue + "Top Editor   " + reset + topEditor,
 		blue + "Top OS       " + reset + topOS,
@@ -74,6 +73,14 @@ func prettyPrint(data *SummaryResponse, full bool, days int) {
 		printGraph("Projects", getBarGraph(summary.Projects, 0))
 	}
 }
+
+// func cumulateSeconds(data *SummaryResponse, getNameSeconds func(*DayData) int) int {
+// 	seconds := 0
+// 	for _, day := range data.Data {
+// 		seconds += getSeconds(&day)
+// 	}
+// 	return name, seconds
+// }
 
 func printGraph(title string, graphLines []string) {
 	fmt.Println(bold + blue + title + reset)
@@ -119,4 +126,16 @@ func getBarGraph(items []StatItem, limit int) []string {
 		output = append(output, line)
 	}
 	return output
+}
+
+func timeFmt(seconds int) string {
+	if seconds < 60 {
+		return fmt.Sprintf("%ds", seconds)
+	}
+	if seconds < 3600 {
+		return fmt.Sprintf("%dm", seconds/60)
+	}
+	hours := seconds / 3600
+	minutes := (seconds % 3600) / 60
+	return fmt.Sprintf("%dh %dm", hours, minutes)
 }
