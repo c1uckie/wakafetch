@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"slices"
 	"strings"
 	"time"
 )
@@ -106,10 +105,6 @@ func fetchSummary(apiKey, apiURL string, days int) (*SummaryResponse, error) {
 }
 
 func fetchStats(apiKey, apiURL, rangeStr string) (*StatsResponse, error) {
-	ranges := []string{"last_7_days", "last_30_days", "last_6_months", "last_year", "all_time"}
-	if !slices.Contains(ranges, rangeStr) {
-		return nil, fmt.Errorf("Invalid range: %s, must be one of %v", rangeStr, ranges)
-	}
 	apiURL = strings.TrimSuffix(apiURL, "/")
 	requestURL := fmt.Sprintf("%s/v1/users/current/stats/%s", apiURL, rangeStr)
 	// fmt.Println(requestURL)

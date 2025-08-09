@@ -6,6 +6,7 @@ import (
 )
 
 const (
+	red       = "\033[31m"
 	yellow    = "\033[33m"
 	blue      = "\033[1;34m"
 	green     = "\033[32m"
