@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 )
@@ -64,6 +65,32 @@ type SummaryResponse struct {
 	Start string    `json:"start"`
 }
 
+type StatsResponse struct {
+	Data struct {
+		Range                     string     `json:"range"`
+		Status                    string     `json:"status"`
+		TotalSeconds              float64    `json:"total_seconds"`
+		UserID                    string     `json:"user_id"`
+		Username                  string     `json:"username"`
+		DailyAverage              float64    `json:"daily_average"`
+		DaysIncludingHolidays     int        `json:"days_including_holidays"`
+		Start                     string     `json:"start"`
+		End                       string     `json:"end"`
+		HumanReadableDailyAverage string     `json:"human_readable_daily_average"`
+		HumanReadableRange        string     `json:"human_readable_range"`
+		HumanReadableTotal        string     `json:"human_readable_total"`
+		IsCodingActivityVisible   bool       `json:"is_coding_activity_visible"`
+		IsOtherUsageVisible       bool       `json:"is_other_usage_visible"`
+		Branches                  []StatItem `json:"branches"`
+		Categories                []StatItem `json:"categories"`
+		Editors                   []StatItem `json:"editors"`
+		Languages                 []StatItem `json:"languages"`
+		Machines                  []StatItem `json:"machines"`
+		OperatingSystems          []StatItem `json:"operating_systems"`
+		Projects                  []StatItem `json:"projects"`
+	} `json:"data"`
+}
+
 func fetchSummary(apiKey, apiURL string, days int) (*SummaryResponse, error) {
 	fmt.Println(days)
 	apiURL = strings.TrimSuffix(apiURL, "/")
@@ -71,8 +98,22 @@ func fetchSummary(apiKey, apiURL string, days int) (*SummaryResponse, error) {
 	todayDate := today.Format("2006-01-02")
 	startDate := today.AddDate(0, 0, -days+1).Format("2006-01-02")
 	requestURL := fmt.Sprintf("%s/v1/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
-	fmt.Println(requestURL)
 	response, err := fetchApi[SummaryResponse](apiKey, requestURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to fetch stats: %w", err)
+	}
+	return response, nil
+}
+
+func fetchStats(apiKey, apiURL, rangeStr string) (*StatsResponse, error) {
+	ranges := []string{"last_7_days", "last_30_days", "last_6_months", "last_year", "all_time"}
+	if !slices.Contains(ranges, rangeStr) {
+		return nil, fmt.Errorf("Invalid range: %s, must be one of %v", rangeStr, ranges)
+	}
+	apiURL = strings.TrimSuffix(apiURL, "/")
+	requestURL := fmt.Sprintf("%s/v1/users/current/stats/%s", apiURL, rangeStr)
+	// fmt.Println(requestURL)
+	response, err := fetchApi[StatsResponse](apiKey, requestURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch stats: %w", err)
 	}

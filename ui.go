@@ -74,13 +74,98 @@ func displaySummary(data *SummaryResponse, full bool, days int) {
 	}
 }
 
-// func cumulateSeconds(data *SummaryResponse, getNameSeconds func(*DayData) int) int {
-// 	seconds := 0
-// 	for _, day := range data.Data {
-// 		seconds += getSeconds(&day)
-// 	}
-// 	return name, seconds
-// }
+func displayStats(data *StatsResponse, full bool, rangeStr string) {
+	if data == nil || (data.Data.TotalSeconds == 0 && len(data.Data.Languages) == 0 && len(data.Data.Projects) == 0) {
+		fmt.Println(yellow + "No data available" + reset)
+		return
+	}
+
+	stats := data.Data
+	heading := formatRangeHeading(rangeStr)
+
+	topEditor := "None"
+	if len(stats.Editors) > 0 {
+		topEditor = stats.Editors[0].Name
+	}
+
+	topOS := "None"
+	if len(stats.OperatingSystems) > 0 {
+		topOS = stats.OperatingSystems[0].Name
+	}
+
+	topProject := "None"
+	if len(stats.Projects) > 0 {
+		topProject = stats.Projects[0].Name
+	}
+	if topProject == "unknown" {
+		if len(stats.Projects) > 1 {
+			topProject = stats.Projects[1].Name
+		}
+	}
+
+	totalTime := timeFmt(int(stats.TotalSeconds))
+
+	rightSide := []string{
+		blue + heading + reset,
+		strings.Repeat("-", len(heading)),
+		blue + "Total Time   " + reset + totalTime,
+		blue + "Top Project  " + reset + topProject,
+		blue + "Top Editor   " + reset + topEditor,
+		blue + "Top OS       " + reset + topOS,
+	}
+
+	langGraph := getBarGraph(stats.Languages, 0)
+	for i, line := range langGraph {
+		if i >= len(rightSide) {
+			fmt.Println(line)
+			continue
+		}
+		fmt.Println(line + "   " + rightSide[i])
+	}
+	if len(langGraph) < len(rightSide) {
+		pad := 0
+		if len(langGraph) > 0 {
+			pad = len(langGraph[0]) + 3
+		}
+		for i := len(langGraph); i < len(rightSide); i++ {
+			fmt.Println(strings.Repeat(" ", pad) + rightSide[i])
+		}
+	}
+	if full {
+		printGraph("Editors", getBarGraph(stats.Editors, 0))
+		printGraph("Projects", getBarGraph(stats.Projects, 0))
+	}
+}
+
+func formatRangeHeading(rangeStr string) string {
+	lower := strings.ToLower(strings.TrimSpace(rangeStr))
+	switch lower {
+	case "today":
+		return "Today"
+	case "yesterday":
+		return "Yesterday"
+	case "last_7_days", "last7days":
+		return "Last 7 days"
+	case "last_30_days":
+		return "Last 30 days"
+	case "last_6_months":
+		return "Last 6 months"
+	case "last_year":
+		return "Last year"
+	case "this_year":
+		return "This year"
+	case "week", "this_week":
+		return "This week"
+	case "month", "this_month":
+		return "This month"
+	default:
+		spaced := strings.ReplaceAll(rangeStr, "_", " ")
+		if len(spaced) == 0 {
+			return ""
+		}
+		return strings.ToUpper(spaced[:1]) + spaced[1:]
+	}
+}
 
 func printGraph(title string, graphLines []string) {
 	fmt.Println(bold + blue + title + reset)
