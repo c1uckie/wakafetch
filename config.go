@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 )
 
@@ -60,12 +59,12 @@ func parseConfig() (string, string, error) {
 
 func getConfigPath() string {
 	var configFile string
-
-	if runtime.GOOS == "windows" {
-		configFile = filepath.Join(os.Getenv("USERPROFILE"), ".wakatime.cfg")
-	} else {
-		configFile = filepath.Join(os.Getenv("HOME"), ".wakatime.cfg")
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
+		os.Exit(1)
 	}
+	configFile = filepath.Join(homeDir, ".wakatime.cfg")
 
 	return configFile
 }

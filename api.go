@@ -91,7 +91,6 @@ type StatsResponse struct {
 }
 
 func fetchSummary(apiKey, apiURL string, days int) (*SummaryResponse, error) {
-	fmt.Println(days)
 	apiURL = strings.TrimSuffix(apiURL, "/")
 	today := time.Now()
 	todayDate := today.Format("2006-01-02")
