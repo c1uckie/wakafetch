@@ -12,6 +12,11 @@ const (
 	graphLimit = 10
 )
 
+type KV struct {
+	Key string
+	Val string
+}
+
 func displaySummary(data *SummaryResponse, full bool, days int) {
 	if len(data.Data) == 0 {
 		warnln("No data available for the selected period.")
@@ -24,20 +29,11 @@ func displaySummary(data *SummaryResponse, full bool, days int) {
 		heading = fmt.Sprintf("Last %d days", days)
 	}
 
-	topEditor := "None"
-	if len(summary.Editors) > 0 {
-		topEditor = summary.Editors[0].Name
-	}
+	topEditor := topItemName(summary.Editors)
 
-	topOS := "None"
-	if len(summary.OperatingSystems) > 0 {
-		topOS = summary.OperatingSystems[0].Name
-	}
+	topOS := topItemName(summary.OperatingSystems)
 
-	topProject := "None"
-	if len(summary.Projects) > 0 {
-		topProject = summary.Projects[0].Name
-	}
+	topProject := topItemName(summary.Projects)
 
 	if topProject == "unknown" {
 		if len(summary.Projects) > 1 {
@@ -47,16 +43,15 @@ func displaySummary(data *SummaryResponse, full bool, days int) {
 
 	totalTime := timeFmt(data.CumulativeTotal.Seconds, false)
 
-	rightSide := []string{
-		boldBlue + heading + reset,
-		strings.Repeat("-", len(heading)),
-		boldBlue + "Total Time   " + reset + totalTime,
-		boldBlue + "Top Project  " + reset + topProject,
-		boldBlue + "Top Editor   " + reset + topEditor,
-		boldBlue + "Top OS       " + reset + topOS,
+	stats := []KV{
+		{"Total Time", totalTime},
+		{"Top Project", topProject},
+		{"Top Editor", topEditor},
+		{"Top OS", topOS},
 	}
+	rightSide := RightSideStr(heading, stats)
 
-	langGraph, graphWidth := getBarGraph(summary.Languages, graphLimit)
+	langGraph, graphWidth := graphStr(summary.Languages, graphLimit)
 
 	if len(langGraph) == 0 {
 		for _, line := range rightSide {
@@ -78,43 +73,34 @@ func displayStats(data *StatsResponse, full bool, rangeStr string) {
 	}
 
 	stats := data.Data
+
 	heading := formatRangeHeading(rangeStr)
 
-	topEditor := "None"
-	if len(stats.Editors) > 0 {
-		topEditor = stats.Editors[0].Name
-	}
+	topEditor := topItemName(stats.Editors)
 
-	topOS := "None"
-	if len(stats.OperatingSystems) > 0 {
-		topOS = stats.OperatingSystems[0].Name
-	}
+	topOS := topItemName(stats.OperatingSystems)
 
-	topProject := "None"
-	if len(stats.Projects) > 0 {
-		topProject = stats.Projects[0].Name
-	}
+	topProject := topItemName(stats.Projects)
+
 	if topProject == "unknown" {
 		if len(stats.Projects) > 1 {
 			topProject = stats.Projects[1].Name
 		}
 	}
 
-	dailyAvg := timeFmt(int(stats.DailyAverage), false)
+	dailyAvg := timeFmt(stats.DailyAverage, false)
+	totalTime := timeFmt(stats.TotalSeconds, false)
 
-	totalTime := timeFmt(int(stats.TotalSeconds), false)
-
-	rightSide := []string{
-		boldBlue + heading + reset,
-		strings.Repeat("-", len(heading)),
-		boldBlue + "Total Time   " + reset + totalTime,
-		boldBlue + "Daily Avg    " + reset + dailyAvg,
-		boldBlue + "Top Project  " + reset + topProject,
-		boldBlue + "Top Editor   " + reset + topEditor,
-		boldBlue + "Top OS       " + reset + topOS,
+	statsMap := []KV{
+		{"Total Time", totalTime},
+		{"Daily Avg", dailyAvg},
+		{"Top Project", topProject},
+		{"Top Editor", topEditor},
+		{"Top OS", topOS},
 	}
+	rightSide := RightSideStr(heading, statsMap)
 
-	langGraph, graphWidth := getBarGraph(stats.Languages, graphLimit)
+	langGraph, graphWidth := graphStr(stats.Languages, graphLimit)
 	if len(langGraph) == 0 {
 		for _, line := range rightSide {
 			fmt.Println(line)
@@ -155,7 +141,7 @@ func formatRangeHeading(rangeStr string) string {
 
 func printGraph(title string, item []StatItem) {
 	fmt.Println(bold + boldBlue + title + reset)
-	graphLines, _ := getBarGraph(item, 0)
+	graphLines, _ := graphStr(item, 0)
 	if len(graphLines) == 0 {
 		warnln("No data available for %s", title)
 		return
@@ -165,7 +151,7 @@ func printGraph(title string, item []StatItem) {
 	}
 }
 
-func getBarGraph(items []StatItem, limit int) ([]string, int) {
+func graphStr(items []StatItem, limit int) ([]string, int) {
 	if len(items) == 0 {
 		return []string{}, 0
 	}
@@ -207,11 +193,31 @@ func getBarGraph(items []StatItem, limit int) ([]string, int) {
 			green + bar + reset +
 			gray + secondBar + reset + " " +
 			// green + fmt.Sprintf("%-7s", timeFmt(int(item.TotalSeconds))) + reset
-			green + timeFmt(int(item.TotalSeconds), true) + reset
+			green + timeFmt(item.TotalSeconds, true) + reset
 		output = append(output, line)
 	}
 	graphWidth := maxNameLength + 1 + barWidth + 1 + 7
 	return output, graphWidth
+}
+
+func RightSideStr(heading string, stats []KV) []string {
+	if len(stats) == 0 {
+		return []string{}
+	}
+
+	maxKeyLength := 0
+	for _, kv := range stats {
+		maxKeyLength = max(maxKeyLength, len(kv.Key))
+	}
+
+	output := make([]string, 0, len(stats)+2)
+	output = append(output, boldBlue+heading+reset)
+	output = append(output, strings.Repeat("-", len(heading)))
+	for _, kv := range stats {
+		line := boldBlue + fmt.Sprintf("%-*s", maxKeyLength+2, kv.Key) + reset + kv.Val
+		output = append(output, line)
+	}
+	return output
 }
 
 func printLeftRight(left, right []string, spacing, leftWidth int) {
@@ -233,19 +239,27 @@ func printLeftRight(left, right []string, spacing, leftWidth int) {
 	}
 }
 
-func timeFmt(seconds int, pad bool) string {
-	if seconds < 3600 {
+func timeFmt(seconds float64, pad bool) string {
+	sec := int(seconds)
+	if sec < 3600 {
 		if pad {
-			return fmt.Sprintf("%2dm %2ds", seconds/60, seconds%60)
+			return fmt.Sprintf("%2dm %2ds", sec/60, sec%60)
 		} else {
-			return fmt.Sprintf("%dm %ds", seconds/60, seconds%60)
+			return fmt.Sprintf("%dm %ds", sec/60, sec%60)
 		}
 	}
-	hours := seconds / 3600
-	minutes := (seconds % 3600) / 60
+	hours := sec / 3600
+	minutes := (sec % 3600) / 60
 	if pad {
 		return fmt.Sprintf("%2dh %2dm", hours, minutes)
 	} else {
 		return fmt.Sprintf("%dh %dm", hours, minutes)
 	}
+}
+
+func topItemName(items []StatItem) string {
+	if len(items) == 0 {
+		return "None"
+	}
+	return items[0].Name
 }

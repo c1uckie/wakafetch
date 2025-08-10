@@ -10,14 +10,14 @@ import (
 )
 
 type StatItem struct {
-	Digital      string  `json:"digital"`
-	Hours        int     `json:"hours"`
-	Minutes      int     `json:"minutes"`
 	Name         string  `json:"name"`
-	Percent      float64 `json:"percent"`
-	Seconds      int     `json:"seconds"`
-	Text         string  `json:"text"`
+	Seconds      float64 `json:"seconds"`
 	TotalSeconds float64 `json:"total_seconds"`
+	// Percent      float64 `json:"percent"`
+	// Digital      string  `json:"digital"`
+	// Hours        int     `json:"hours"`
+	// Minutes      int     `json:"minutes"`
+	// Text         string  `json:"text"`
 }
 
 type DayData struct {
@@ -48,16 +48,16 @@ type DayData struct {
 
 type SummaryResponse struct {
 	CumulativeTotal struct {
-		Digital string `json:"digital"`
-		Seconds int    `json:"seconds"`
-		Text    string `json:"text"`
+		Digital string  `json:"digital"`
+		Seconds float64 `json:"seconds"`
+		Text    string  `json:"text"`
 	} `json:"cumulative_total"`
 	DailyAverage struct {
-		DaysIncludingHolidays int    `json:"days_including_holidays"`
-		DaysMinusHolidays     int    `json:"days_minus_holidays"`
-		Holidays              int    `json:"holidays"`
-		Seconds               int    `json:"seconds"`
-		Text                  string `json:"text"`
+		DaysIncludingHolidays int     `json:"days_including_holidays"`
+		DaysMinusHolidays     int     `json:"days_minus_holidays"`
+		Holidays              int     `json:"holidays"`
+		Seconds               float64 `json:"seconds"`
+		Text                  string  `json:"text"`
 	} `json:"daily_average"`
 	Data  []DayData `json:"data"`
 	End   string    `json:"end"`
