@@ -69,7 +69,12 @@ func main() {
 			os.Exit(1)
 			return
 		}
-		displaySummary(data, *fullFlag, 1)
+
+		if len(data.Data) == 0 {
+			warnln("No data available for the selected period.")
+			return
+		}
+		displayTodayStats(&data.Data[0], *fullFlag)
 	} else {
 		data, err := fetchStats(apiKey, apiURL, rangeStr)
 		if err != nil {

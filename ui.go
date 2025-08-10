@@ -17,31 +17,12 @@ type KV struct {
 	Val string
 }
 
-func displaySummary(data *SummaryResponse, full bool, days int) {
-	if len(data.Data) == 0 {
-		warnln("No data available for the selected period.")
-		return
-	}
-	summary := data.Data[len(data.Data)-1]
-
+func displayTodayStats(data *DayData, full bool) {
 	heading := "Today"
-	if days > 1 {
-		heading = fmt.Sprintf("Last %d days", days)
-	}
-
-	topEditor := topItemName(summary.Editors)
-
-	topOS := topItemName(summary.OperatingSystems)
-
-	topProject := topItemName(summary.Projects)
-
-	if topProject == "unknown" {
-		if len(summary.Projects) > 1 {
-			topProject = summary.Projects[1].Name
-		}
-	}
-
-	totalTime := timeFmt(data.CumulativeTotal.Seconds, false)
+	topEditor := topItemName(data.Editors, false)
+	topOS := topItemName(data.OperatingSystems, false)
+	topProject := topItemName(data.Projects, true)
+	totalTime := timeFmt(data.GrandTotal.TotalSeconds, false)
 
 	stats := []KV{
 		{"Total Time", totalTime},
@@ -49,20 +30,14 @@ func displaySummary(data *SummaryResponse, full bool, days int) {
 		{"Top Editor", topEditor},
 		{"Top OS", topOS},
 	}
+
 	rightSide := RightSideStr(heading, stats)
+	langGraph, graphWidth := graphStr(data.Languages, graphLimit)
 
-	langGraph, graphWidth := graphStr(summary.Languages, graphLimit)
-
-	if len(langGraph) == 0 {
-		for _, line := range rightSide {
-			fmt.Println(line)
-		}
-	} else {
-		printLeftRight(langGraph, rightSide, spacing, graphWidth)
-	}
+	printLeftRight(langGraph, rightSide, spacing, graphWidth)
 	if full {
-		printGraph("Editors", summary.Editors)
-		printGraph("Projects", summary.Projects)
+		printGraph("Editors", data.Editors)
+		printGraph("Projects", data.Projects)
 	}
 }
 
@@ -76,11 +51,11 @@ func displayStats(data *StatsResponse, full bool, rangeStr string) {
 
 	heading := formatRangeHeading(rangeStr)
 
-	topEditor := topItemName(stats.Editors)
+	topEditor := topItemName(stats.Editors, false)
 
-	topOS := topItemName(stats.OperatingSystems)
+	topOS := topItemName(stats.OperatingSystems, false)
 
-	topProject := topItemName(stats.Projects)
+	topProject := topItemName(stats.Projects, true)
 
 	if topProject == "unknown" {
 		if len(stats.Projects) > 1 {
@@ -221,6 +196,10 @@ func printLeftRight(left, right []string, spacing, leftWidth int) {
 		}
 		fmt.Println(line + strings.Repeat(" ", spacing) + right[i])
 	}
+	if len(left) == 0 {
+		spacing = 0
+		leftWidth = 0
+	}
 	if len(left) < len(right) {
 		pad := 0
 		if len(left) > 0 {
@@ -250,9 +229,15 @@ func timeFmt(seconds float64, pad bool) string {
 	}
 }
 
-func topItemName(items []StatItem) string {
+func topItemName(items []StatItem, skipUnknown bool) string {
 	if len(items) == 0 {
 		return "None"
 	}
-	return items[0].Name
+	top := items[0].Name
+	if skipUnknown && top == "unknown" {
+		if len(items) > 1 {
+			top = items[1].Name
+		}
+	}
+	return top
 }
