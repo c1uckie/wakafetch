@@ -47,26 +47,21 @@ func main() {
 		apiKey = *apiKeyFlag
 	}
 
-	rangeStr := "last_7_days"
-	switch *rangeFlag {
-	case "7d":
-		rangeStr = "last_7_days"
-	case "30d":
-		rangeStr = "last_30_days"
-	case "6m":
-		rangeStr = "last_6_months"
-	case "1y":
-		rangeStr = "last_year"
-	case "all":
-		rangeStr = "all_time"
-	case "today":
-		rangeStr = "today"
-	default:
-		errorln("Invalid range: '%s', must be one of %stoday, 7d, 30d, 6m, 1y, all",
-			*rangeFlag, green)
+	rangeStrMap := map[string]string{
+		"today": "today",
+		"7d":    "last_7_days",
+		"30d":   "last_30_days",
+		"6m":    "last_6_months",
+		"1y":    "last_year",
+		"all":   "all_time",
+	}
+	rangeStr, exists := rangeStrMap[*rangeFlag]
+	if !exists {
+		errorln("Invalid range: '%s', must be one of %stoday, 7d, 30d, 6m, 1y, all", *rangeFlag, green)
 		os.Exit(1)
 		return
 	}
+
 	if rangeStr == "today" {
 		data, err := fetchSummary(apiKey, apiURL, 1)
 		if err != nil {

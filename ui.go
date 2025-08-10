@@ -117,26 +117,19 @@ func displayStats(data *StatsResponse, full bool, rangeStr string) {
 
 func formatRangeHeading(rangeStr string) string {
 	lower := strings.ToLower(strings.TrimSpace(rangeStr))
-	switch lower {
-	case "today":
-		return "Today"
-	case "yesterday":
-		return "Yesterday"
-	case "last_7_days":
-		return "Last 7 days"
-	case "last_30_days":
-		return "Last 30 days"
-	case "last_6_months":
-		return "Last 6 months"
-	case "last_year":
-		return "Last year"
-	default:
-		spaced := strings.ReplaceAll(rangeStr, "_", " ")
-		if len(spaced) == 0 {
-			return ""
-		}
-		return strings.ToUpper(spaced[:1]) + spaced[1:]
+	fmtRangeMap := map[string]string{
+		"today":         "Today",
+		"yesterday":     "Yesterday",
+		"last_7_days":   "Last 7 days",
+		"last_30_days":  "Last 30 days",
+		"last_6_months": "Last 6 months",
+		"last_year":     "Last year",
+		"all_time":      "All time",
 	}
+	if val, exists := fmtRangeMap[lower]; exists {
+		return val
+	}
+	return strings.ToUpper(lower[:1]) + lower[1:]
 }
 
 func printGraph(title string, item []StatItem) {
