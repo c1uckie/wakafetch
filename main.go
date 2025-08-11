@@ -10,6 +10,7 @@ var (
 	red      = "\x1b[31m"
 	yellow   = "\x1b[33m"
 	boldBlue = "\x1b[34;1m"
+	blue     = "\x1b[34m"
 	green    = "\x1b[32m"
 	gray     = "\x1b[90m"
 	bold     = "\x1b[1m"
@@ -104,5 +105,5 @@ func colorsShouldBeEnabled() bool {
 }
 
 func disableColors() {
-	red, yellow, boldBlue, green, gray, bold, reset = "", "", "", "", "", "", ""
+	red, yellow, boldBlue, blue, green, gray, bold, reset = "", "", "", "", "", "", "", ""
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 )
 
 const (
@@ -18,7 +19,7 @@ type KV struct {
 }
 
 func displayTodayStats(data *DayData, full bool) {
-	heading := "Today"
+	heading := "Today" + " (" + formatDateRange(data.Range.Start, data.Range.End) + ")"
 	topEditor := topItemName(data.Editors, false)
 	topOS := topItemName(data.OperatingSystems, false)
 	topProject := topItemName(data.Projects, true)
@@ -31,7 +32,7 @@ func displayTodayStats(data *DayData, full bool) {
 		{"Top OS", topOS},
 	}
 
-	rightSide := RightSideStr(heading, stats)
+	rightSide := rightSideStr(heading, stats)
 	langGraph, graphWidth := graphStr(data.Languages, graphLimit)
 
 	printLeftRight(langGraph, rightSide, spacing, graphWidth)
@@ -48,13 +49,9 @@ func displayStats(data *StatsResponse, full bool, rangeStr string) {
 	}
 
 	stats := data.Data
-
-	heading := formatRangeHeading(rangeStr)
-
+	heading := formatRangeHeading(rangeStr) + " (" + formatDateRange(stats.Start, stats.End) + ")"
 	topEditor := topItemName(stats.Editors, false)
-
 	topOS := topItemName(stats.OperatingSystems, false)
-
 	topProject := topItemName(stats.Projects, true)
 
 	if topProject == "unknown" {
@@ -73,16 +70,10 @@ func displayStats(data *StatsResponse, full bool, rangeStr string) {
 		{"Top Editor", topEditor},
 		{"Top OS", topOS},
 	}
-	rightSide := RightSideStr(heading, statsMap)
 
+	rightSide := rightSideStr(heading, statsMap)
 	langGraph, graphWidth := graphStr(stats.Languages, graphLimit)
-	if len(langGraph) == 0 {
-		for _, line := range rightSide {
-			fmt.Println(line)
-		}
-	} else {
-		printLeftRight(langGraph, rightSide, spacing, graphWidth)
-	}
+	printLeftRight(langGraph, rightSide, spacing, graphWidth)
 
 	if full {
 		printGraph("Editors", stats.Editors)
@@ -168,7 +159,7 @@ func graphStr(items []StatItem, limit int) ([]string, int) {
 	return output, graphWidth
 }
 
-func RightSideStr(heading string, stats []KV) []string {
+func rightSideStr(heading string, stats []KV) []string {
 	if len(stats) == 0 {
 		return []string{}
 	}
@@ -179,7 +170,12 @@ func RightSideStr(heading string, stats []KV) []string {
 	}
 
 	output := make([]string, 0, len(stats)+2)
-	output = append(output, boldBlue+heading+reset)
+	headingSplit := strings.Split(heading, "(")
+	headingStr := boldBlue + heading + reset
+	if len(headingSplit) > 1 {
+		headingStr = boldBlue + headingSplit[0] + reset + blue + "(" + headingSplit[1] + reset
+	}
+	output = append(output, headingStr)
 	output = append(output, strings.Repeat("-", len(heading)))
 	for _, kv := range stats {
 		line := boldBlue + fmt.Sprintf("%-*s", maxKeyLength+2, kv.Key) + reset + kv.Val
@@ -240,4 +236,32 @@ func topItemName(items []StatItem, skipUnknown bool) string {
 		}
 	}
 	return top
+}
+
+func formatDateRange(start, end string) string {
+	if start == "" || end == "" {
+		return ""
+	}
+	startParts := strings.Split(start, "T")
+	endParts := strings.Split(end, "T")
+	if len(startParts) < 1 || len(endParts) < 1 {
+		return ""
+	}
+	startDate := startParts[0]
+	endDate := endParts[0]
+
+	const layout = "2006-01-02"
+	const outLayout = "Jan 2"
+	startTime, err1 := time.Parse(layout, startDate)
+	endTime, err2 := time.Parse(layout, endDate)
+	if err1 != nil || err2 != nil {
+		return ""
+	}
+	startStr := startTime.Format(outLayout)
+	endStr := endTime.Format(outLayout)
+
+	if startDate == endDate {
+		return startStr
+	}
+	return fmt.Sprintf("%s to %s", startStr, endStr)
 }
