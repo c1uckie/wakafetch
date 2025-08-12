@@ -4,17 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"os"
-)
 
-var (
-	red      = "\x1b[31m"
-	yellow   = "\x1b[33m"
-	boldBlue = "\x1b[34;1m"
-	blue     = "\x1b[34m"
-	green    = "\x1b[32m"
-	gray     = "\x1b[90m"
-	bold     = "\x1b[1m"
-	reset    = "\x1b[0m"
+	"github.com/sahaj-b/wakafetch/ui"
 )
 
 func main() {
@@ -22,7 +13,7 @@ func main() {
 	rangeFlag := flag.String("range", "7d", "Range of data to fetch (today/7d/30d/6m/1y/all)")
 	apiKeyFlag := flag.String("api-key", "", "Your WakaTime/Wakapi API key (overrides config)")
 	fullFlag := flag.Bool("full", false, "Display full statistics")
-	noColorFlag := flag.Bool("no-colors", false, "Disable colored output")
+	noColorFlag := flag.Bool("no-colors", false, "Disable coloRed output")
 	helpFlag := flag.Bool("help", false, "Display help information")
 	flag.Parse()
 
@@ -33,13 +24,13 @@ func main() {
 		return
 	}
 
-	if *noColorFlag || !colorsShouldBeEnabled() {
-		disableColors()
+	if !*noColorFlag && colorsShouldBeEnabled() {
+		ui.EnableColors()
 	}
 
 	apiURL, apiKey, err := parseConfig()
 	if err != nil {
-		errorln("%v", err)
+		ui.Errorln("%v", err)
 		os.Exit(1)
 		return
 	}
@@ -58,33 +49,42 @@ func main() {
 	}
 	rangeStr, exists := rangeStrMap[*rangeFlag]
 	if !exists {
-		errorln("Invalid range: '%s', must be one of %stoday, 7d, 30d, 6m, 1y, all", *rangeFlag, green)
+		ui.Errorln("Invalid range: '%s', must be one of %stoday, 7d, 30d, 6m, 1y, all", *rangeFlag, ui.Clr.Green)
 		os.Exit(1)
 		return
 	}
 
-	if rangeStr == "today" {
-		data, err := fetchSummary(apiKey, apiURL, 1)
-		if err != nil {
-			errorln("%v", err)
-			os.Exit(1)
-			return
-		}
-
-		if len(data.Data) == 0 {
-			warnln("No data available for the selected period.")
-			return
-		}
-		displayTodayStats(&data.Data[0], *fullFlag)
-	} else {
+	if rangeStr == "all_time" {
 		data, err := fetchStats(apiKey, apiURL, rangeStr)
 		if err != nil {
-			errorln("%v", err)
+			ui.Errorln("%v", err)
 			os.Exit(1)
 			return
 		}
-		displayStats(data, *fullFlag, rangeStr)
+		ui.DisplayStats(data, *fullFlag, rangeStr)
+		return
 	}
+
+	days := map[string]int{
+		"today":         1,
+		"last_7_days":   7,
+		"last_30_days":  30,
+		"last_6_months": 183,
+		"last_year":     365,
+	}[rangeStr]
+
+	data, err := fetchSummary(apiKey, apiURL, days)
+	if err != nil {
+		ui.Errorln("%v", err)
+		os.Exit(1)
+		return
+	}
+
+	if len(data.Data) == 0 {
+		ui.Warnln("No data available for the selected period.")
+		return
+	}
+	ui.DisplaySummary(data, *fullFlag, rangeStr)
 }
 
 func colorsShouldBeEnabled() bool {
@@ -102,8 +102,4 @@ func colorsShouldBeEnabled() bool {
 		return false
 	}
 	return (file.Mode() & os.ModeCharDevice) != 0
-}
-
-func disableColors() {
-	red, yellow, boldBlue, blue, green, gray, bold, reset = "", "", "", "", "", "", "", ""
 }
