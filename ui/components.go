@@ -24,7 +24,7 @@ func mapToSortedStatItems(m map[string]float64) []types.StatItem {
 	for name, seconds := range m {
 		items = append(items, types.StatItem{Name: name, TotalSeconds: seconds})
 	}
-	// sort by seconds descending
+	// descending seconds
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].TotalSeconds > items[j].TotalSeconds
 	})
@@ -111,7 +111,7 @@ func graphStr(items []types.StatItem, limit int) ([]string, int) {
 	return output, graphWidth
 }
 
-func rightSideStr(heading string, stats []KV) []string {
+func rightSideStr(heading string, stats []Field) []string {
 	if len(stats) == 0 {
 		return []string{}
 	}

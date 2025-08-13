@@ -13,14 +13,14 @@ const (
 	graphLimit = 10
 )
 
-type KV struct {
+type Field struct {
 	Key string
 	Val string
 }
 
 type DisplayPayload struct {
 	Heading          string
-	Stats            []KV
+	Stats            []Field
 	Languages        []types.StatItem
 	Editors          []types.StatItem
 	Projects         []types.StatItem
@@ -49,7 +49,7 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 	dailyAvg := timeFmt(stats.DailyAverage)
 	totalTime := timeFmt(stats.TotalSeconds)
 
-	statsMap := []KV{
+	statsMap := []Field{
 		{"Total Time", totalTime},
 		{"Daily Avg", dailyAvg},
 		{"Top Project", topProject},
@@ -69,6 +69,22 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 	render(payload)
 }
 
+type job struct {
+	targetMap map[string]float64
+	getter    func(types.DayData) []types.StatItem
+}
+
+func processJobs(data []types.DayData, jobs []job) {
+	for _, dayData := range data {
+		for _, j := range jobs {
+			items := j.getter(dayData)
+			for _, item := range items {
+				j.targetMap[item.Name] += item.TotalSeconds
+			}
+		}
+	}
+}
+
 func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	if data == nil || len(data.Data) == 0 {
 		Warnln("No data available for the selected period: '%s'", rangeStr)
@@ -80,20 +96,14 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	editors := make(map[string]float64)
 	operatingSystems := make(map[string]float64)
 
-	for _, dayData := range data.Data {
-		for _, lang := range dayData.Languages {
-			languages[lang.Name] += lang.TotalSeconds
-		}
-		for _, proj := range dayData.Projects {
-			projects[proj.Name] += proj.TotalSeconds
-		}
-		for _, editor := range dayData.Editors {
-			editors[editor.Name] += editor.TotalSeconds
-		}
-		for _, os := range dayData.OperatingSystems {
-			operatingSystems[os.Name] += os.TotalSeconds
-		}
+	aggregateJobs := []job{
+		{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
+		{projects, func(day types.DayData) []types.StatItem { return day.Projects }},
+		{editors, func(day types.DayData) []types.StatItem { return day.Editors }},
+		{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
 	}
+
+	processJobs(data.Data, aggregateJobs)
 
 	aggregatedLangs := mapToSortedStatItems(languages)
 	aggregatedProjs := mapToSortedStatItems(projects)
@@ -103,15 +113,15 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	heading := formatRangeHeading(rangeStr) + " (" + formatDateRange(data.Start, data.End) + ")"
 	totalTime := timeFmt(data.CumulativeTotal.Seconds)
 	dailyAvg := timeFmt(data.DailyAverage.Seconds)
-	daysCoded := fmt.Sprintf("%d/%d days", data.DailyAverage.DaysMinusHolidays, data.DailyAverage.DaysIncludingHolidays)
+	activeDays := fmt.Sprintf("%d/%d days", data.DailyAverage.DaysMinusHolidays, data.DailyAverage.DaysIncludingHolidays)
 	topProject := topItemName(aggregatedProjs, true)
 	topEditor := topItemName(aggregatedEditors, false)
 	topOS := topItemName(aggregatedOS, false)
 
-	statsMap := []KV{
+	statsMap := []Field{
 		{"Total Time", totalTime},
 		{"Daily Avg", dailyAvg},
-		{"Days Coded", daysCoded},
+		{"Active Days", activeDays},
 		{"Top Project", topProject},
 		{"Top Editor", topEditor},
 		{"Top OS", topOS},
