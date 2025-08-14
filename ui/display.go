@@ -7,10 +7,9 @@ import (
 )
 
 const (
-	barWidth   = 25
-	barChar    = "🬋" // ❙ 🬋 ▆ ❘ ❚ █ ━ ▭ ╼ ━ 🬋
-	spacing    = 3
-	graphLimit = 10
+	barWidth = 25
+	barChar  = "🬋" // ❙ 🬋 ▆ ❘ ❚ █ ━ ▭ ╼ ━ 🬋
+	spacing  = 3
 )
 
 type Field struct {
@@ -95,20 +94,33 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	projects := make(map[string]float64)
 	editors := make(map[string]float64)
 	operatingSystems := make(map[string]float64)
+	categories := make(map[string]float64)
 
 	aggregateJobs := []job{
 		{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
 		{projects, func(day types.DayData) []types.StatItem { return day.Projects }},
 		{editors, func(day types.DayData) []types.StatItem { return day.Editors }},
 		{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
+		{categories, func(day types.DayData) []types.StatItem { return day.Categories }},
 	}
 
 	processJobs(data.Data, aggregateJobs)
+
+	// Find busiest day
+	busiestDay := ""
+	busiestDaySeconds := 0.0
+	for _, dayData := range data.Data {
+		if dayData.GrandTotal.TotalSeconds > busiestDaySeconds {
+			busiestDaySeconds = dayData.GrandTotal.TotalSeconds
+			busiestDay = dayData.Range.Date
+		}
+	}
 
 	aggregatedLangs := mapToSortedStatItems(languages)
 	aggregatedProjs := mapToSortedStatItems(projects)
 	aggregatedEditors := mapToSortedStatItems(editors)
 	aggregatedOS := mapToSortedStatItems(operatingSystems)
+	aggregatedCategories := mapToSortedStatItems(categories)
 
 	heading := formatRangeHeading(rangeStr) + " (" + formatDateRange(data.Start, data.End) + ")"
 	totalTime := timeFmt(data.CumulativeTotal.Seconds)
@@ -117,14 +129,21 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	topProject := topItemName(aggregatedProjs, true)
 	topEditor := topItemName(aggregatedEditors, false)
 	topOS := topItemName(aggregatedOS, false)
+	topCategory := topItemName(aggregatedCategories, false)
+	numLangs := fmt.Sprintf("%d", len(aggregatedLangs))
+	numProjects := fmt.Sprintf("%d", len(aggregatedProjs))
 
 	statsMap := []Field{
 		{"Total Time", totalTime},
 		{"Daily Avg", dailyAvg},
 		{"Active Days", activeDays},
+		{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
 		{"Top Project", topProject},
 		{"Top Editor", topEditor},
+		{"Top Category", topCategory},
 		{"Top OS", topOS},
+		{"Languages", numLangs},
+		{"Projects", numProjects},
 	}
 
 	payload := &DisplayPayload{

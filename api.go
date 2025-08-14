@@ -48,18 +48,34 @@ func fetchApi[T any](apiKey, requestURL string) (*T, error) {
 	client := &http.Client{Timeout: timeout}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("failed to execute request (%s): %w", requestURL, err)
+		if ne, ok := err.(interface{ Timeout() bool }); ok && ne.Timeout() {
+			return nil, fmt.Errorf("Request timed out after %s while contacting server", timeout)
+		}
+		return nil, fmt.Errorf("Unable to reach server. Check your internet connection")
 	}
 
 	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("api request failed with status: %s", resp.Status)
+		switch resp.StatusCode {
+		case http.StatusUnauthorized:
+			return nil, fmt.Errorf("Authentication failed (401). Check your API key")
+		case http.StatusForbidden:
+			return nil, fmt.Errorf("Access forbidden (403). Your API key might not have permission")
+		case http.StatusNotFound:
+			return nil, fmt.Errorf("Endpoint not found (404). Verify the API URL")
+		case http.StatusTooManyRequests:
+			return nil, fmt.Errorf("Rate limit exceeded (429). Please try again later")
+		case http.StatusBadGateway, http.StatusServiceUnavailable, http.StatusGatewayTimeout:
+			return nil, fmt.Errorf("Server unavailable (%s). Please try again later", resp.Status)
+		default:
+			return nil, fmt.Errorf("Api request failed: %s", resp.Status)
+		}
 	}
 
 	var apiResponse T
 	if err = json.NewDecoder(resp.Body).Decode(&apiResponse); err != nil {
-		return nil, fmt.Errorf("failed to decode json response: %w", err)
+		return nil, fmt.Errorf("Invalid response from server (failed to decode JSON)")
 	}
 
 	return &apiResponse, nil

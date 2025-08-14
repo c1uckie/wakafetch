@@ -10,6 +10,7 @@ import (
 
 func render(p *DisplayPayload) {
 	rightSide := rightSideStr(p.Heading, p.Stats)
+	graphLimit := len(rightSide)
 	langGraph, graphWidth := graphStr(p.Languages, graphLimit)
 	printLeftRight(langGraph, rightSide, spacing, graphWidth)
 

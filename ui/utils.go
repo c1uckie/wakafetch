@@ -37,6 +37,24 @@ func formatDateRange(start, end string) string {
 	return fmt.Sprintf("%s to %s", startStr, endStr)
 }
 
+func formatBestDay(dateStr string) string {
+	if dateStr == "" {
+		return "None"
+	}
+	dateParts := strings.Split(dateStr, "T")
+	if len(dateParts) < 1 {
+		return dateStr
+	}
+
+	const layout = "2006-01-02"
+	const outLayout = "January 2, 2006"
+	dateTime, err := time.Parse(layout, dateParts[0])
+	if err != nil {
+		return dateStr
+	}
+	return dateTime.Format(outLayout)
+}
+
 func timeFmt(seconds float64) string {
 	sec := int(seconds)
 	if sec < 3600 {
