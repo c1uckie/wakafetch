@@ -38,26 +38,34 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 	}
 
 	stats := data.Data
-	heading := formatRangeHeading(rangeStr) + " (" + formatDateRange(stats.Start, stats.End) + ")"
-	topEditor := topItemName(stats.Editors, false)
-	topOS := topItemName(stats.OperatingSystems, false)
-	topProject := topItemName(stats.Projects, true)
-
-	if topProject == "unknown" {
-		if len(stats.Projects) > 1 {
-			topProject = stats.Projects[1].Name
-		}
+	var heading string
+	if rangeStr == "all_time" {
+		heading = formatRangeHeading(rangeStr)
+	} else {
+		heading = formatRangeHeading(rangeStr) + " (" + formatDateRange(stats.Start, stats.End) + ")"
 	}
 
-	dailyAvg := timeFmt(stats.DailyAverage)
 	totalTime := timeFmt(stats.TotalSeconds)
+	dailyAvg := timeFmt(stats.DailyAverage)
 
-	statsMap := []Field{
+	topProject := topItemName(stats.Projects, true)
+	topEditor := topItemName(stats.Editors, false)
+	topOS := topItemName(stats.OperatingSystems, false)
+	topCategory := topItemName(stats.Categories, false)
+
+	numLangs := fmt.Sprintf("%d", len(stats.Languages))
+	numProjects := fmt.Sprintf("%d", len(stats.Projects))
+
+	var statsMap []Field
+	statsMap = []Field{
 		{"Total Time", totalTime},
 		{"Daily Avg", dailyAvg},
 		{"Top Project", topProject},
 		{"Top Editor", topEditor},
+		{"Top Category", topCategory},
 		{"Top OS", topOS},
+		{"Languages", numLangs},
+		{"Projects", numProjects},
 	}
 
 	payload := &DisplayPayload{
@@ -79,17 +87,6 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 type job struct {
 	targetMap map[string]float64
 	getter    func(types.DayData) []types.StatItem
-}
-
-func processJobs(data []types.DayData, jobs []job) {
-	for _, dayData := range data {
-		for _, j := range jobs {
-			items := j.getter(dayData)
-			for _, item := range items {
-				j.targetMap[item.Name] += item.TotalSeconds
-			}
-		}
-	}
 }
 
 func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
@@ -207,4 +204,15 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 		Full:             full,
 	}
 	render(payload)
+}
+
+func processJobs(data []types.DayData, jobs []job) {
+	for _, dayData := range data {
+		for _, j := range jobs {
+			items := j.getter(dayData)
+			for _, item := range items {
+				j.targetMap[item.Name] += item.TotalSeconds
+			}
+		}
+	}
 }

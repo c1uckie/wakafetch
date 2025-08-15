@@ -23,11 +23,13 @@ func formatDateRange(start, end string) string {
 
 	const layout = "2006-01-02"
 	const outLayout = "Jan 2"
+
 	startTime, err1 := time.Parse(layout, startDate)
 	endTime, err2 := time.Parse(layout, endDate)
 	if err1 != nil || err2 != nil {
 		return ""
 	}
+
 	startStr := startTime.Format(outLayout)
 	endStr := endTime.Format(outLayout)
 
