@@ -25,7 +25,7 @@ type DisplayPayload struct {
 	Projects         []types.StatItem
 	OperatingSystems []types.StatItem
 	Categories       []types.StatItem
-	Branches         []types.StatItem
+	Entities         []types.StatItem
 	Machines         []types.StatItem
 	DailyData        []types.DayData
 	Full             bool
@@ -68,7 +68,7 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 		{"Projects", numProjects},
 	}
 
-	payload := &DisplayPayload{
+	payload := DisplayPayload{
 		Heading:          heading,
 		Stats:            statsMap,
 		Languages:        stats.Languages,
@@ -76,12 +76,12 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 		Projects:         stats.Projects,
 		OperatingSystems: stats.OperatingSystems,
 		Categories:       stats.Categories,
-		Branches:         stats.Branches,
+		Entities:         stats.Entities,
 		Machines:         stats.Machines,
 		DailyData:        nil,
 		Full:             full,
 	}
-	render(payload)
+	render(&payload)
 }
 
 type job struct {
@@ -98,31 +98,23 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	languages := make(map[string]float64)
 
 	// Only process additional data if full mode is on
-	var projects, editors, operatingSystems, categories, branches, machines map[string]float64
-	var aggregateJobs []job
+	var projects, editors, operatingSystems, categories, machines, entities map[string]float64
 
-	if full {
-		projects = make(map[string]float64)
-		editors = make(map[string]float64)
-		operatingSystems = make(map[string]float64)
-		categories = make(map[string]float64)
-		branches = make(map[string]float64)
-		machines = make(map[string]float64)
+	projects = make(map[string]float64)
+	editors = make(map[string]float64)
+	operatingSystems = make(map[string]float64)
+	categories = make(map[string]float64)
+	machines = make(map[string]float64)
+	entities = make(map[string]float64)
 
-		aggregateJobs = []job{
-			{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
-			{projects, func(day types.DayData) []types.StatItem { return day.Projects }},
-			{editors, func(day types.DayData) []types.StatItem { return day.Editors }},
-			{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
-			{categories, func(day types.DayData) []types.StatItem { return day.Categories }},
-			{branches, func(day types.DayData) []types.StatItem { return day.Branches }},
-			{machines, func(day types.DayData) []types.StatItem { return day.Machines }},
-		}
-	} else {
-		// Only process languages for basic mode
-		aggregateJobs = []job{
-			{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
-		}
+	aggregateJobs := []job{
+		{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
+		{projects, func(day types.DayData) []types.StatItem { return day.Projects }},
+		{editors, func(day types.DayData) []types.StatItem { return day.Editors }},
+		{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
+		{categories, func(day types.DayData) []types.StatItem { return day.Categories }},
+		{machines, func(day types.DayData) []types.StatItem { return day.Machines }},
+		{entities, func(day types.DayData) []types.StatItem { return day.Entities }},
 	}
 
 	processJobs(data.Data, aggregateJobs)
@@ -138,56 +130,38 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	}
 
 	aggregatedLangs := mapToSortedStatItems(languages)
-
-	var aggregatedProjs, aggregatedEditors, aggregatedOS, aggregatedCategories, aggregatedBranches, aggregatedMachines []types.StatItem
-
-	if full {
-		aggregatedProjs = mapToSortedStatItems(projects)
-		aggregatedEditors = mapToSortedStatItems(editors)
-		aggregatedOS = mapToSortedStatItems(operatingSystems)
-		aggregatedCategories = mapToSortedStatItems(categories)
-		aggregatedBranches = mapToSortedStatItems(branches)
-		aggregatedMachines = mapToSortedStatItems(machines)
-	}
+	aggregatedProjs := mapToSortedStatItems(projects)
+	aggregatedEditors := mapToSortedStatItems(editors)
+	aggregatedOS := mapToSortedStatItems(operatingSystems)
+	aggregatedCategories := mapToSortedStatItems(categories)
+	aggregatedMachines := mapToSortedStatItems(machines)
+	aggregatedEntities := mapToSortedStatItems(entities)
 
 	heading := formatRangeHeading(rangeStr) + " (" + formatDateRange(data.Start, data.End) + ")"
 	totalTime := timeFmt(data.CumulativeTotal.Seconds)
 	dailyAvg := timeFmt(data.DailyAverage.Seconds)
 	activeDays := fmt.Sprintf("%d/%d days", data.DailyAverage.DaysMinusHolidays, data.DailyAverage.DaysIncludingHolidays)
 
-	var topProject, topEditor, topOS, topCategory string
-	var numLangs, numProjects string
+	topProject := topItemName(aggregatedProjs, true)
+	topEditor := topItemName(aggregatedEditors, false)
+	topOS := topItemName(aggregatedOS, false)
+	// topCategory := topItemName(aggregatedCategories, false)
 
-	if full {
-		topProject = topItemName(aggregatedProjs, true)
-		topEditor = topItemName(aggregatedEditors, false)
-		topOS = topItemName(aggregatedOS, false)
-		topCategory = topItemName(aggregatedCategories, false)
-		numLangs = fmt.Sprintf("%d", len(aggregatedLangs))
-		numProjects = fmt.Sprintf("%d", len(aggregatedProjs))
-	}
+	numLangs := fmt.Sprintf("%d", len(aggregatedLangs))
+	numProjects := fmt.Sprintf("%d", len(aggregatedProjs))
 
 	var statsMap []Field
-	if full {
-		statsMap = []Field{
-			{"Total Time", totalTime},
-			{"Daily Avg", dailyAvg},
-			{"Active Days", activeDays},
-			{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
-			{"Top Project", topProject},
-			{"Top Editor", topEditor},
-			{"Top Category", topCategory},
-			{"Top OS", topOS},
-			{"Languages", numLangs},
-			{"Projects", numProjects},
-		}
-	} else {
-		statsMap = []Field{
-			{"Total Time", totalTime},
-			{"Daily Avg", dailyAvg},
-			{"Active Days", activeDays},
-			{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
-		}
+	statsMap = []Field{
+		{"Total Time", totalTime},
+		{"Daily Avg", dailyAvg},
+		{"Active Days", activeDays},
+		{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
+		{"Top Project", topProject},
+		{"Top Editor", topEditor},
+		{"Top OS", topOS},
+		{"Languages", numLangs},
+		{"Projects", numProjects},
+		// {"Top Category", topCategory},
 	}
 
 	payload := &DisplayPayload{
@@ -197,11 +171,11 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 		Editors:          aggregatedEditors,
 		Projects:         aggregatedProjs,
 		OperatingSystems: aggregatedOS,
-		Categories:       aggregatedCategories,
-		Branches:         aggregatedBranches,
-		Machines:         aggregatedMachines,
 		DailyData:        data.Data,
 		Full:             full,
+		Categories:       aggregatedCategories,
+		Entities:         aggregatedEntities,
+		Machines:         aggregatedMachines,
 	}
 	render(payload)
 }

@@ -8,14 +8,14 @@ import (
 	"github.com/sahaj-b/wakafetch/types"
 )
 
-func printHeader(title string) {
-	fmt.Println(Clr.Bold + Clr.Yellow + title + Clr.Reset)
-}
+const maxTableBarWidth = 10
 
-func printDailyBreakdown(dailyData []types.DayData) {
+func dailyBreakdownStr(dailyData []types.DayData) []string {
 	if len(dailyData) == 0 {
-		return
+		return []string{}
 	}
+
+	output := make([]string, 0, len(dailyData)+3)
 
 	// sort descending by date
 	sortedDays := make([]types.DayData, len(dailyData))
@@ -27,14 +27,63 @@ func printDailyBreakdown(dailyData []types.DayData) {
 		return dateI > dateJ
 	})
 
-	printHeader("Daily Breakdown")
+	output = append(output, Clr.Bold+Clr.Yellow+"Daily Breakdown"+Clr.Reset)
 
 	maxSecs := findMaxDailySeconds(sortedDays)
 	cols := calculateDailyColumnWidths(sortedDays)
 
-	printDailyHeaders(cols)
-	printDailySeparator(cols)
-	printDailyRows(sortedDays, cols, maxSecs)
+	output = append(output, dailyHeadersStr(cols))
+	output = append(output, dailySeparatorStr(cols))
+
+	dailyRows := dailyRowsStr(sortedDays, cols, maxSecs)
+	output = append(output, dailyRows...)
+
+	return output
+}
+
+func dailyHeadersStr(cols dailyColumns) string {
+	headerDate := fmt.Sprintf("%-*s", cols.date, "Date")
+	headerTotal := fmt.Sprintf("%-*s", cols.total, "Total")
+	headerLang := fmt.Sprintf("%-*s", cols.lang, "Language")
+	headerProj := fmt.Sprintf("%-*s", cols.project, "Project")
+
+	return Clr.Blue + headerDate + Clr.Reset + " │ " + Clr.Blue + headerTotal + Clr.Reset + " │ " + Clr.Blue + headerLang + Clr.Reset + " │ " + Clr.Blue + headerProj + Clr.Reset
+}
+
+func dailySeparatorStr(cols dailyColumns) string {
+	return strings.Repeat("─", cols.date) + "─┼─" +
+		strings.Repeat("─", cols.total) + "─┼─" +
+		strings.Repeat("─", cols.lang) + "─┼─" +
+		strings.Repeat("─", cols.project)
+}
+
+func dailyRowsStr(dailyData []types.DayData, cols dailyColumns, maxSecs float64) []string {
+	output := make([]string, 0, len(dailyData))
+
+	for _, day := range dailyData {
+		if day.GrandTotal.TotalSeconds < 60 {
+			continue
+		}
+
+		date := fmt.Sprintf("%-*s", cols.date, formatDailyDate(day.Range.Start))
+
+		barLength := int((day.GrandTotal.TotalSeconds / maxSecs) * maxTableBarWidth)
+		if barLength < 1 && day.GrandTotal.TotalSeconds > 0 {
+			barLength = 1
+		}
+		bar := strings.Repeat(barChar, barLength)
+		timeStr := timeFmtPad(day.GrandTotal.TotalSeconds, maxSecs)
+		timeWithBar := timeStr + " " + bar
+		totalFormatted := fmt.Sprintf("%-*s", cols.total, timeWithBar)
+
+		topLang := fmt.Sprintf("%-*s", cols.lang, topItemName(day.Languages, false))
+		topProj := fmt.Sprintf("%-*s", cols.project, topItemName(day.Projects, true))
+
+		row := date + " │ " + Clr.Green + totalFormatted + Clr.Reset + " │ " + topLang + " │ " + topProj
+		output = append(output, row)
+	}
+
+	return output
 }
 
 func findMaxDailySeconds(dailyData []types.DayData) float64 {
@@ -88,49 +137,8 @@ func calculateDailyColumnWidths(dailyData []types.DayData) dailyColumns {
 		}
 	}
 
-	// Add space for bars (max 10 chars + 1 space)
-	cols.total += 11
+	// spaces for bar
+	cols.total += maxTableBarWidth + 1
 
 	return cols
-}
-
-func printDailyHeaders(cols dailyColumns) {
-	headerDate := fmt.Sprintf("%-*s", cols.date, "Date")
-	headerTotal := fmt.Sprintf("%-*s", cols.total, "Total")
-	headerLang := fmt.Sprintf("%-*s", cols.lang, "Language")
-	headerProj := fmt.Sprintf("%-*s", cols.project, "Project")
-
-	fmt.Println(Clr.Blue+headerDate+Clr.Reset, "│", Clr.Blue+headerTotal+Clr.Reset, "│", Clr.Blue+headerLang+Clr.Reset, "│", Clr.Blue+headerProj+Clr.Reset)
-}
-
-func printDailySeparator(cols dailyColumns) {
-	separator := strings.Repeat("─", cols.date) + "─┼─" +
-		strings.Repeat("─", cols.total) + "─┼─" +
-		strings.Repeat("─", cols.lang) + "─┼─" +
-		strings.Repeat("─", cols.project)
-	fmt.Println(separator)
-}
-
-func printDailyRows(dailyData []types.DayData, cols dailyColumns, maxSecs float64) {
-	for _, day := range dailyData {
-		if day.GrandTotal.TotalSeconds < 60 {
-			continue
-		}
-
-		date := fmt.Sprintf("%-*s", cols.date, formatDailyDate(day.Range.Start))
-
-		barLength := int((day.GrandTotal.TotalSeconds / maxSecs) * 10)
-		if barLength < 1 && day.GrandTotal.TotalSeconds > 0 {
-			barLength = 1
-		}
-		bar := strings.Repeat("🬋", barLength)
-		timeStr := timeFmtPad(day.GrandTotal.TotalSeconds, maxSecs)
-		timeWithBar := timeStr + " " + bar
-		totalFormatted := fmt.Sprintf("%-*s", cols.total, timeWithBar)
-
-		topLang := fmt.Sprintf("%-*s", cols.lang, topItemName(day.Languages, false))
-		topProj := fmt.Sprintf("%-*s", cols.project, topItemName(day.Projects, true))
-
-		fmt.Println(date, "│", Clr.Green+totalFormatted+Clr.Reset, "│", topLang, "│", topProj)
-	}
 }

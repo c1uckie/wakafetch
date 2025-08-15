@@ -15,16 +15,33 @@ func render(p *DisplayPayload) {
 	printLeftRight(langGraph, rightSide, spacing, graphWidth)
 
 	if p.Full {
-		fmt.Println()
-		printGraph("Editors", p.Editors)
-		printGraph("Projects", p.Projects)
-		printGraph("Categories", p.Categories)
-		printGraph("Operating Systems", p.OperatingSystems)
-		printGraph("Machines", p.Machines)
-		printGraph("Branches", p.Branches)
+		divider := "\n" + strings.Repeat("─", 100) + "\n"
+
+		if len(p.Projects) > 0 || len(p.Editors) > 0 {
+			fmt.Println(Clr.Gray + divider + Clr.Reset)
+			projectsGraph, maxWidth := graphWithHeaderStr("Projects", p.Projects)
+			editorsGraph, _ := graphWithHeaderStr("Editors", p.Editors)
+			printLeftRight(projectsGraph, editorsGraph, spacing, maxWidth)
+		}
+
+		if len(p.Categories) > 0 || len(p.OperatingSystems) > 0 {
+			fmt.Println(Clr.Gray + divider + Clr.Reset)
+			categoriesGraph, maxWidth := graphWithHeaderStr("Categories", p.Categories)
+			osGraph, _ := graphWithHeaderStr("Operating Systems", p.OperatingSystems)
+			printLeftRight(categoriesGraph, osGraph, spacing, maxWidth)
+		}
+
+		if len(p.Machines) > 0 || len(p.Entities) > 0 {
+			fmt.Println(Clr.Gray + divider + Clr.Reset)
+			machinesGraph, maxWidth := graphWithHeaderStr("Machines", p.Machines)
+			entitiesGraph, _ := graphWithHeaderStr("Entities", p.Entities)
+			printLeftRight(machinesGraph, entitiesGraph, spacing, maxWidth)
+		}
 
 		if len(p.DailyData) > 0 {
-			printDailyBreakdown(p.DailyData)
+			fmt.Println(Clr.Gray + divider + Clr.Reset)
+			dailyTable := dailyBreakdownStr(p.DailyData)
+			printLeftRight(dailyTable, []string{}, spacing, 0)
 		}
 	}
 }
@@ -57,18 +74,17 @@ func formatRangeHeading(rangeStr string) string {
 	return strings.ToUpper(lower[:1]) + lower[1:]
 }
 
-func printGraph(title string, item []types.StatItem) {
-	printHeader(title)
-	graphLines, _ := graphStr(item, 0)
+func graphWithHeaderStr(title string, item []types.StatItem) ([]string, int) {
+	graphLines, width := graphStr(item, 0)
+
 	if len(graphLines) == 0 {
-		Warnln("No data available for %s", title)
-		fmt.Println()
-		return
+		return []string{}, 0
 	}
-	for _, line := range graphLines {
-		fmt.Println(line)
-	}
-	fmt.Println()
+
+	output := make([]string, 0, len(item)+2)
+	output = append(output, Clr.Yellow+Clr.Bold+fmt.Sprintf("%-*s", width, title)+Clr.Reset)
+	output = append(output, graphLines...)
+	return output, width
 }
 
 func graphStr(items []types.StatItem, limit int) ([]string, int) {
@@ -146,16 +162,23 @@ func rightSideStr(heading string, stats []Field) []string {
 }
 
 func printLeftRight(left, right []string, spacing, leftWidth int) {
+	separator := ""
+	space := strings.Repeat(" ", spacing)
+	if len(right) > 0 {
+		separator = space + Clr.Gray + "│" + Clr.Reset + space
+	}
+
 	for i, line := range left {
 		if i >= len(right) {
-			fmt.Println(line)
+			fmt.Println(line + separator)
 			continue
 		}
-		fmt.Println(line + strings.Repeat(" ", spacing) + right[i])
+		fmt.Println(line + separator + right[i])
 	}
 	if len(left) == 0 {
 		spacing = 0
 		leftWidth = 0
+		separator = ""
 	}
 	if len(left) < len(right) {
 		pad := 0
@@ -163,7 +186,7 @@ func printLeftRight(left, right []string, spacing, leftWidth int) {
 			pad = leftWidth + spacing
 		}
 		for i := len(left); i < len(right); i++ {
-			fmt.Println(strings.Repeat(" ", pad) + right[i])
+			fmt.Println(strings.Repeat(" ", pad) + separator + right[i])
 		}
 	}
 }
