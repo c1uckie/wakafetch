@@ -24,6 +24,10 @@ type DisplayPayload struct {
 	Editors          []types.StatItem
 	Projects         []types.StatItem
 	OperatingSystems []types.StatItem
+	Categories       []types.StatItem
+	Branches         []types.StatItem
+	Machines         []types.StatItem
+	DailyData        []types.DayData
 	Full             bool
 }
 
@@ -63,6 +67,10 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 		Editors:          stats.Editors,
 		Projects:         stats.Projects,
 		OperatingSystems: stats.OperatingSystems,
+		Categories:       stats.Categories,
+		Branches:         stats.Branches,
+		Machines:         stats.Machines,
+		DailyData:        nil,
 		Full:             full,
 	}
 	render(payload)
@@ -91,17 +99,33 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	}
 
 	languages := make(map[string]float64)
-	projects := make(map[string]float64)
-	editors := make(map[string]float64)
-	operatingSystems := make(map[string]float64)
-	categories := make(map[string]float64)
 
-	aggregateJobs := []job{
-		{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
-		{projects, func(day types.DayData) []types.StatItem { return day.Projects }},
-		{editors, func(day types.DayData) []types.StatItem { return day.Editors }},
-		{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
-		{categories, func(day types.DayData) []types.StatItem { return day.Categories }},
+	// Only process additional data if full mode is on
+	var projects, editors, operatingSystems, categories, branches, machines map[string]float64
+	var aggregateJobs []job
+
+	if full {
+		projects = make(map[string]float64)
+		editors = make(map[string]float64)
+		operatingSystems = make(map[string]float64)
+		categories = make(map[string]float64)
+		branches = make(map[string]float64)
+		machines = make(map[string]float64)
+
+		aggregateJobs = []job{
+			{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
+			{projects, func(day types.DayData) []types.StatItem { return day.Projects }},
+			{editors, func(day types.DayData) []types.StatItem { return day.Editors }},
+			{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
+			{categories, func(day types.DayData) []types.StatItem { return day.Categories }},
+			{branches, func(day types.DayData) []types.StatItem { return day.Branches }},
+			{machines, func(day types.DayData) []types.StatItem { return day.Machines }},
+		}
+	} else {
+		// Only process languages for basic mode
+		aggregateJobs = []job{
+			{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
+		}
 	}
 
 	processJobs(data.Data, aggregateJobs)
@@ -117,33 +141,56 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	}
 
 	aggregatedLangs := mapToSortedStatItems(languages)
-	aggregatedProjs := mapToSortedStatItems(projects)
-	aggregatedEditors := mapToSortedStatItems(editors)
-	aggregatedOS := mapToSortedStatItems(operatingSystems)
-	aggregatedCategories := mapToSortedStatItems(categories)
+
+	var aggregatedProjs, aggregatedEditors, aggregatedOS, aggregatedCategories, aggregatedBranches, aggregatedMachines []types.StatItem
+
+	if full {
+		aggregatedProjs = mapToSortedStatItems(projects)
+		aggregatedEditors = mapToSortedStatItems(editors)
+		aggregatedOS = mapToSortedStatItems(operatingSystems)
+		aggregatedCategories = mapToSortedStatItems(categories)
+		aggregatedBranches = mapToSortedStatItems(branches)
+		aggregatedMachines = mapToSortedStatItems(machines)
+	}
 
 	heading := formatRangeHeading(rangeStr) + " (" + formatDateRange(data.Start, data.End) + ")"
 	totalTime := timeFmt(data.CumulativeTotal.Seconds)
 	dailyAvg := timeFmt(data.DailyAverage.Seconds)
 	activeDays := fmt.Sprintf("%d/%d days", data.DailyAverage.DaysMinusHolidays, data.DailyAverage.DaysIncludingHolidays)
-	topProject := topItemName(aggregatedProjs, true)
-	topEditor := topItemName(aggregatedEditors, false)
-	topOS := topItemName(aggregatedOS, false)
-	topCategory := topItemName(aggregatedCategories, false)
-	numLangs := fmt.Sprintf("%d", len(aggregatedLangs))
-	numProjects := fmt.Sprintf("%d", len(aggregatedProjs))
 
-	statsMap := []Field{
-		{"Total Time", totalTime},
-		{"Daily Avg", dailyAvg},
-		{"Active Days", activeDays},
-		{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
-		{"Top Project", topProject},
-		{"Top Editor", topEditor},
-		{"Top Category", topCategory},
-		{"Top OS", topOS},
-		{"Languages", numLangs},
-		{"Projects", numProjects},
+	var topProject, topEditor, topOS, topCategory string
+	var numLangs, numProjects string
+
+	if full {
+		topProject = topItemName(aggregatedProjs, true)
+		topEditor = topItemName(aggregatedEditors, false)
+		topOS = topItemName(aggregatedOS, false)
+		topCategory = topItemName(aggregatedCategories, false)
+		numLangs = fmt.Sprintf("%d", len(aggregatedLangs))
+		numProjects = fmt.Sprintf("%d", len(aggregatedProjs))
+	}
+
+	var statsMap []Field
+	if full {
+		statsMap = []Field{
+			{"Total Time", totalTime},
+			{"Daily Avg", dailyAvg},
+			{"Active Days", activeDays},
+			{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
+			{"Top Project", topProject},
+			{"Top Editor", topEditor},
+			{"Top Category", topCategory},
+			{"Top OS", topOS},
+			{"Languages", numLangs},
+			{"Projects", numProjects},
+		}
+	} else {
+		statsMap = []Field{
+			{"Total Time", totalTime},
+			{"Daily Avg", dailyAvg},
+			{"Active Days", activeDays},
+			{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
+		}
 	}
 
 	payload := &DisplayPayload{
@@ -153,6 +200,10 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 		Editors:          aggregatedEditors,
 		Projects:         aggregatedProjs,
 		OperatingSystems: aggregatedOS,
+		Categories:       aggregatedCategories,
+		Branches:         aggregatedBranches,
+		Machines:         aggregatedMachines,
+		DailyData:        data.Data,
 		Full:             full,
 	}
 	render(payload)

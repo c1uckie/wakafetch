@@ -15,8 +15,17 @@ func render(p *DisplayPayload) {
 	printLeftRight(langGraph, rightSide, spacing, graphWidth)
 
 	if p.Full {
+		fmt.Println()
 		printGraph("Editors", p.Editors)
 		printGraph("Projects", p.Projects)
+		printGraph("Categories", p.Categories)
+		printGraph("Operating Systems", p.OperatingSystems)
+		printGraph("Machines", p.Machines)
+		printGraph("Branches", p.Branches)
+
+		if len(p.DailyData) > 0 {
+			printDailyBreakdown(p.DailyData)
+		}
 	}
 }
 
@@ -25,7 +34,6 @@ func mapToSortedStatItems(m map[string]float64) []types.StatItem {
 	for name, seconds := range m {
 		items = append(items, types.StatItem{Name: name, TotalSeconds: seconds})
 	}
-	// descending seconds
 	sort.Slice(items, func(i, j int) bool {
 		return items[i].TotalSeconds > items[j].TotalSeconds
 	})
@@ -50,15 +58,17 @@ func formatRangeHeading(rangeStr string) string {
 }
 
 func printGraph(title string, item []types.StatItem) {
-	fmt.Println(Clr.BoldBlue + title + Clr.Reset)
+	printHeader(title)
 	graphLines, _ := graphStr(item, 0)
 	if len(graphLines) == 0 {
 		Warnln("No data available for %s", title)
+		fmt.Println()
 		return
 	}
 	for _, line := range graphLines {
 		fmt.Println(line)
 	}
+	fmt.Println()
 }
 
 func graphStr(items []types.StatItem, limit int) ([]string, int) {
@@ -97,14 +107,12 @@ func graphStr(items []types.StatItem, limit int) ([]string, int) {
 		secondBar := strings.Repeat(barChar, secondBarLength)
 		label := fmt.Sprintf("%-*s ", maxNameLength, item.Name)
 
-		// no second bar if colors disabled
 		if Clr.Gray == "" {
 			secondBar = strings.Repeat(" ", secondBarLength)
 		}
 		line := label +
 			Clr.Green + bar + Clr.Reset +
 			Clr.Gray + secondBar + Clr.Reset + " " +
-			// Green + fmt.Sprintf("%-7s", timeFmt(int(item.TotalSeconds))) + Reset
 			Clr.Green + timeFmtPad(item.TotalSeconds, maxSeconds) + Clr.Reset
 		output = append(output, line)
 	}

@@ -55,6 +55,24 @@ func formatBestDay(dateStr string) string {
 	return dateTime.Format(outLayout)
 }
 
+func formatDailyDate(dateStr string) string {
+	if dateStr == "" {
+		return ""
+	}
+	dateParts := strings.Split(dateStr, "T")
+	if len(dateParts) < 1 {
+		return dateStr
+	}
+
+	const layout = "2006-01-02"
+	const outLayout = "Jan 2"
+	dateTime, err := time.Parse(layout, dateParts[0])
+	if err != nil {
+		return dateStr
+	}
+	return dateTime.Format(outLayout)
+}
+
 func timeFmt(seconds float64) string {
 	sec := int(seconds)
 	if sec < 3600 {
