@@ -10,12 +10,12 @@ import (
 
 const maxTableBarWidth = 10
 
-func dailyBreakdownStr(dailyData []types.DayData) []string {
+func dailyBreakdownStr(dailyData []types.DayData) ([]string, int) {
 	if len(dailyData) == 0 {
-		return []string{}
+		return []string{}, 0
 	}
 
-	output := make([]string, 0, len(dailyData)+3)
+	output := make([]string, 0, len(dailyData)+2)
 
 	// sort descending by date
 	sortedDays := make([]types.DayData, len(dailyData))
@@ -27,8 +27,6 @@ func dailyBreakdownStr(dailyData []types.DayData) []string {
 		return dateI > dateJ
 	})
 
-	output = append(output, Clr.Bold+Clr.Yellow+"Daily Breakdown"+Clr.Reset)
-
 	maxSecs := findMaxDailySeconds(sortedDays)
 	cols := calculateDailyColumnWidths(sortedDays)
 
@@ -38,12 +36,12 @@ func dailyBreakdownStr(dailyData []types.DayData) []string {
 	dailyRows := dailyRowsStr(sortedDays, cols, maxSecs)
 	output = append(output, dailyRows...)
 
-	return output
+	return output, cols.total
 }
 
 func dailyHeadersStr(cols dailyColumns) string {
 	headerDate := fmt.Sprintf("%-*s", cols.date, "Date")
-	headerTotal := fmt.Sprintf("%-*s", cols.total, "Total")
+	headerTotal := fmt.Sprintf("%-*s", cols.time, "Time")
 	headerLang := fmt.Sprintf("%-*s", cols.lang, "Language")
 	headerProj := fmt.Sprintf("%-*s", cols.project, "Project")
 
@@ -52,7 +50,7 @@ func dailyHeadersStr(cols dailyColumns) string {
 
 func dailySeparatorStr(cols dailyColumns) string {
 	return strings.Repeat("─", cols.date) + "─┼─" +
-		strings.Repeat("─", cols.total) + "─┼─" +
+		strings.Repeat("─", cols.time) + "─┼─" +
 		strings.Repeat("─", cols.lang) + "─┼─" +
 		strings.Repeat("─", cols.project)
 }
@@ -74,7 +72,7 @@ func dailyRowsStr(dailyData []types.DayData, cols dailyColumns, maxSecs float64)
 		bar := strings.Repeat(barChar, barLength)
 		timeStr := timeFmtPad(day.GrandTotal.TotalSeconds, maxSecs)
 		timeWithBar := timeStr + " " + bar
-		totalFormatted := fmt.Sprintf("%-*s", cols.total, timeWithBar)
+		totalFormatted := fmt.Sprintf("%-*s", cols.time, timeWithBar)
 
 		topLang := fmt.Sprintf("%-*s", cols.lang, topItemName(day.Languages, false))
 		topProj := fmt.Sprintf("%-*s", cols.project, topItemName(day.Projects, true))
@@ -98,17 +96,19 @@ func findMaxDailySeconds(dailyData []types.DayData) float64 {
 
 type dailyColumns struct {
 	date    int
-	total   int
+	time    int
 	lang    int
 	project int
+	total   int
 }
 
 func calculateDailyColumnWidths(dailyData []types.DayData) dailyColumns {
 	cols := dailyColumns{
 		date:    4, // "Date"
-		total:   5, // "Total"
+		time:    4, // "Time"
 		lang:    8, // "Language"
 		project: 7, // "Project"
+		total:   0,
 	}
 
 	maxSecs := findMaxDailySeconds(dailyData)
@@ -126,8 +126,8 @@ func calculateDailyColumnWidths(dailyData []types.DayData) dailyColumns {
 		if len(dateStr) > cols.date {
 			cols.date = len(dateStr)
 		}
-		if len(totalStr) > cols.total {
-			cols.total = len(totalStr)
+		if len(totalStr) > cols.time {
+			cols.time = len(totalStr)
 		}
 		if len(topLang) > cols.lang {
 			cols.lang = len(topLang)
@@ -138,7 +138,7 @@ func calculateDailyColumnWidths(dailyData []types.DayData) dailyColumns {
 	}
 
 	// spaces for bar
-	cols.total += maxTableBarWidth + 1
-
+	cols.time += maxTableBarWidth + 1
+	cols.total = cols.date + 3 + cols.time + 3 + cols.lang + 3 + cols.project
 	return cols
 }
