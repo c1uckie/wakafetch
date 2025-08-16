@@ -2,57 +2,90 @@ package ui
 
 import (
 	"fmt"
-	"sort"
 	"strings"
-
-	"github.com/sahaj-b/wakafetch/types"
 )
 
-func render(p *DisplayPayload) {
-	fields := fieldsStr(p.Heading, p.Stats)
-	graphLimit := len(fields)
-	langGraph, graphWidth := graphCard("Languages", p.Languages, graphLimit)
-	printLeftRight(langGraph, fields, spacing, graphWidth)
+const (
+	barWidth = 25
+	barChar  = "🬋" // ❙ 🬋 ▆ ❘ ❚ █ ━ ▭ ╼ ━ 🬋
+	spacing  = 1
+)
 
-	if p.Full {
-		if len(p.Projects) > 0 || len(p.Editors) > 0 {
-			fmt.Println()
-			projectsGraph, width := graphCard("Projects", p.Projects, 0)
-			editorsGraph, _ := graphCard("Editors", p.Editors, 0)
-			printLeftRight(projectsGraph, editorsGraph, spacing, width)
-		}
-
-		if len(p.Categories) > 0 || len(p.OperatingSystems) > 0 {
-			fmt.Println()
-			categoriesGraph, width := graphCard("Categories", p.Categories, 0)
-			osGraph, _ := graphCard("Operating Systems", p.OperatingSystems, 0)
-			printLeftRight(categoriesGraph, osGraph, spacing, width)
-		}
-
-		if len(p.Machines) > 0 {
-			fmt.Println()
-			machinesGraph, _ := graphCard("Machines", p.Machines, 0)
-			printLeftRight(machinesGraph, []string{}, spacing, 0)
-		}
-
-		if len(p.DailyData) > 0 {
-			fmt.Println()
-			dailyTable, width := dailyBreakdownStr(p.DailyData)
-			cardTable, _ := cardify(dailyTable, "Daily Breakdown", width)
-			printLeftRight(cardTable, []string{}, spacing, 0)
-		}
-	}
+type CardConfig struct {
+	Title string
+	Lines []string
+	Width int
 }
 
-func mapToSortedStatItems(m map[string]float64) []types.StatItem {
-	items := make([]types.StatItem, 0, len(m))
-	for name, seconds := range m {
-		items = append(items, types.StatItem{Name: name, TotalSeconds: seconds})
+type CardSection struct {
+	Left  []CardConfig
+	Right []CardConfig
+}
+
+func processCardConfigs(configs []CardConfig) ([]string, int) {
+	if len(configs) == 0 {
+		return []string{}, 0
 	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].TotalSeconds > items[j].TotalSeconds
-	})
-	return items
+
+	// Find max width across all configs
+	maxWidth := 0
+	for _, config := range configs {
+		maxWidth = max(maxWidth, config.Width)
+	}
+
+	// Create cards using the max width
+	var allCards []string
+	var finalCardWidth int
+	for _, config := range configs {
+		rightPad := maxWidth - config.Width
+		cardLines, cardWidth := cardify(config.Lines, config.Title, maxWidth, rightPad)
+		finalCardWidth = cardWidth
+		allCards = append(allCards, cardLines...)
+	}
+
+	return allCards, finalCardWidth
+}
+
+func renderCardSection(section CardSection) {
+	leftCards, leftWidth := processCardConfigs(section.Left)
+	rightCards, _ := processCardConfigs(section.Right)
+	printLeftRight(leftCards, rightCards, spacing, leftWidth)
+}
+
+func render(p *DisplayPayload) {
+	fields, fieldsWidth := fieldsStr(p.Heading, p.Stats)
+	langLimit := len(fields)
+	langGraph, langWidth := graphStr(p.Languages, langLimit)
+
+	if p.Full {
+		projectsLines, projectsWidth := graphStr(p.Projects, 0)
+		categoriesLines, categoriesWidth := graphStr(p.Categories, 0)
+		machinesLines, machinesWidth := graphStr(p.Machines, 0)
+		editorsLines, editorsWidth := graphStr(p.Editors, 0)
+		osLines, osWidth := graphStr(p.OperatingSystems, 0)
+
+		fullSection := CardSection{
+			Left: []CardConfig{
+				{Title: "Languages", Lines: langGraph, Width: langWidth},
+				{Title: "Projects", Lines: projectsLines, Width: projectsWidth},
+				{Title: "Categories", Lines: categoriesLines, Width: categoriesWidth},
+				{Title: "Machines", Lines: machinesLines, Width: machinesWidth},
+			},
+			Right: []CardConfig{
+				{Title: "Stats", Lines: fields, Width: fieldsWidth},
+				{Title: "Editors", Lines: editorsLines, Width: editorsWidth},
+				{Title: "Operating Systems", Lines: osLines, Width: osWidth},
+			},
+		}
+		renderCardSection(fullSection)
+
+		dailyTable, tableWidth := dailyBreakdownStr(p.DailyData)
+		cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
+		printLeftRight(cardTable, []string{}, spacing, 0)
+	} else {
+		langGraphCard, langWidth := cardify(langGraph, "Languages", langWidth, 0)
+		printLeftRight(langGraphCard, fields, spacing, langWidth)
+	}
 }
 
 func formatRangeHeading(rangeStr string) string {
@@ -72,9 +105,9 @@ func formatRangeHeading(rangeStr string) string {
 	return strings.ToUpper(lower[:1]) + lower[1:]
 }
 
-func fieldsStr(heading string, stats []Field) []string {
+func fieldsStr(heading string, stats []Field) ([]string, int) {
 	if len(stats) == 0 {
-		return []string{}
+		return []string{}, 0
 	}
 
 	maxKeyLength := 0
@@ -82,19 +115,34 @@ func fieldsStr(heading string, stats []Field) []string {
 		maxKeyLength = max(maxKeyLength, len(kv.Key))
 	}
 
-	output := make([]string, 0, len(stats)+2)
-	headingSplit := strings.Split(heading, "(")
-	headingStr := Clr.BoldBlue + heading + Clr.Reset
-	if len(headingSplit) > 1 {
-		headingStr = Clr.BoldBlue + headingSplit[0] + Clr.Reset + Clr.Blue + "(" + headingSplit[1] + Clr.Reset
-	}
-	output = append(output, headingStr)
-	output = append(output, strings.Repeat("-", len(heading)))
+	maxWidth := len(heading)
 	for _, kv := range stats {
-		line := Clr.BoldBlue + fmt.Sprintf("%-*s", maxKeyLength+2, kv.Key) + Clr.Reset + kv.Val
-		output = append(output, line)
+		lineWidth := maxKeyLength + 2 + len(kv.Val)
+		maxWidth = max(maxWidth, lineWidth)
 	}
-	return output
+
+	output := make([]string, 0, len(stats)+2)
+
+	headingSplit := strings.Split(heading, "(")
+	headingPadded := fmt.Sprintf("%-*s", maxWidth, heading)
+	headingLine := Clr.BoldBlue + headingPadded[:len(headingSplit[0])] + Clr.Reset
+	if len(headingSplit) > 1 {
+		remaining := headingPadded[len(headingSplit[0]):]
+		headingLine += Clr.Blue + remaining + Clr.Reset
+	}
+	output = append(output, headingLine)
+
+	separatorLine := fmt.Sprintf("%-*s", maxWidth, strings.Repeat("-", len(heading)))
+	output = append(output, separatorLine)
+
+	for _, kv := range stats {
+		rawLine := fmt.Sprintf("%-*s%s", maxKeyLength+2, kv.Key, kv.Val)
+		paddedLine := fmt.Sprintf("%-*s", maxWidth, rawLine)
+		styledLine := Clr.BoldBlue + paddedLine[:maxKeyLength+2] + Clr.Reset + paddedLine[maxKeyLength+2:]
+		output = append(output, styledLine)
+	}
+
+	return output, maxWidth
 }
 
 func printLeftRight(left, right []string, spacing, leftWidth int) {

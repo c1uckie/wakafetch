@@ -2,7 +2,7 @@ package ui
 
 import "strings"
 
-func cardify(content []string, header string, contentWidth int) ([]string, int) {
+func cardify(content []string, header string, contentWidth int, rightPad int) ([]string, int) {
 	var (
 		borderTopLeft     = Clr.MidGray + "╭" + Clr.Reset
 		borderTopRight    = Clr.MidGray + "╮" + Clr.Reset
@@ -39,7 +39,7 @@ func cardify(content []string, header string, contentWidth int) ([]string, int) 
 
 	// content lines
 	for _, line := range content {
-		padding := max(0, cardWidth-len(line)-4)
+		padding := max(0, cardWidth-contentWidth-4) + rightPad
 		contentLine := borderVertical + " " + line + strings.Repeat(" ", padding) + " " + borderVertical
 		result = append(result, contentLine)
 	}

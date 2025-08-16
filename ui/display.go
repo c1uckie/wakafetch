@@ -2,15 +2,21 @@ package ui
 
 import (
 	"fmt"
+	"sort"
 
 	"github.com/sahaj-b/wakafetch/types"
 )
 
-const (
-	barWidth = 25
-	barChar  = "🬋" // ❙ 🬋 ▆ ❘ ❚ █ ━ ▭ ╼ ━ 🬋
-	spacing  = 3
-)
+func mapToSortedStatItems(m map[string]float64) []types.StatItem {
+	items := make([]types.StatItem, 0, len(m))
+	for name, seconds := range m {
+		items = append(items, types.StatItem{Name: name, TotalSeconds: seconds})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].TotalSeconds > items[j].TotalSeconds
+	})
+	return items
+}
 
 type Field struct {
 	Key string

@@ -14,7 +14,7 @@ func graphCard(title string, item []types.StatItem, limit int) ([]string, int) {
 		return []string{}, 0
 	}
 
-	return cardify(graphLines, title, width)
+	return cardify(graphLines, title, width, 0)
 }
 
 func graphStr(items []types.StatItem, limit int) ([]string, int) {
