@@ -7,17 +7,6 @@ import (
 	"github.com/sahaj-b/wakafetch/types"
 )
 
-func mapToSortedStatItems(m map[string]float64) []types.StatItem {
-	items := make([]types.StatItem, 0, len(m))
-	for name, seconds := range m {
-		items = append(items, types.StatItem{Name: name, TotalSeconds: seconds})
-	}
-	sort.Slice(items, func(i, j int) bool {
-		return items[i].TotalSeconds > items[j].TotalSeconds
-	})
-	return items
-}
-
 type Field struct {
 	Key string
 	Val string
@@ -32,7 +21,6 @@ type DisplayPayload struct {
 	OperatingSystems []types.StatItem
 	Categories       []types.StatItem
 	Machines         []types.StatItem
-	DailyData        []types.DayData
 	Full             bool
 }
 
@@ -82,7 +70,6 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 		OperatingSystems: stats.OperatingSystems,
 		Categories:       stats.Categories,
 		Machines:         stats.Machines,
-		DailyData:        nil,
 		Full:             full,
 	}
 	render(&payload)
@@ -172,12 +159,17 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 		Editors:          aggregatedEditors,
 		Projects:         aggregatedProjs,
 		OperatingSystems: aggregatedOS,
-		DailyData:        data.Data,
 		Full:             full,
 		Categories:       aggregatedCategories,
 		Machines:         aggregatedMachines,
 	}
 	render(payload)
+}
+
+func DisplayBreakdown(data []types.DayData) {
+	dailyTable, tableWidth := dailyBreakdownStr(data)
+	cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
+	printLeftRight(cardTable, []string{}, spacing, 0)
 }
 
 func processJobs(data []types.DayData, jobs []job) {
@@ -189,4 +181,15 @@ func processJobs(data []types.DayData, jobs []job) {
 			}
 		}
 	}
+}
+
+func mapToSortedStatItems(m map[string]float64) []types.StatItem {
+	items := make([]types.StatItem, 0, len(m))
+	for name, seconds := range m {
+		items = append(items, types.StatItem{Name: name, TotalSeconds: seconds})
+	}
+	sort.Slice(items, func(i, j int) bool {
+		return items[i].TotalSeconds > items[j].TotalSeconds
+	})
+	return items
 }

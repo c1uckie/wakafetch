@@ -78,10 +78,6 @@ func render(p *DisplayPayload) {
 			},
 		}
 		renderCardSection(fullSection)
-
-		dailyTable, tableWidth := dailyBreakdownStr(p.DailyData)
-		cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
-		printLeftRight(cardTable, []string{}, spacing, 0)
 	} else {
 		langGraphCard, langWidth := cardify(langGraph, "Languages", langWidth, 0)
 		printLeftRight(langGraphCard, fields, spacing, langWidth)
