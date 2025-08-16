@@ -8,7 +8,8 @@ import (
 const (
 	barWidth = 25
 	barChar  = "🬋" // ❙ 🬋 ▆ ❘ ❚ █ ━ ▭ ╼ ━ 🬋
-	spacing  = 1
+	gapX     = 1
+	gapY     = 0
 )
 
 type CardConfig struct {
@@ -40,6 +41,9 @@ func processCardConfigs(configs []CardConfig) ([]string, int) {
 		rightPad := maxWidth - config.Width
 		cardLines, cardWidth := cardify(config.Lines, config.Title, maxWidth, rightPad)
 		finalCardWidth = cardWidth
+		for range gapY {
+			allCards = append(allCards, strings.Repeat(" ", cardWidth))
+		}
 		allCards = append(allCards, cardLines...)
 	}
 
@@ -49,7 +53,7 @@ func processCardConfigs(configs []CardConfig) ([]string, int) {
 func renderCardSection(section CardSection) {
 	leftCards, leftWidth := processCardConfigs(section.Left)
 	rightCards, _ := processCardConfigs(section.Right)
-	printLeftRight(leftCards, rightCards, spacing, leftWidth)
+	printLeftRight(leftCards, rightCards, gapX, leftWidth)
 }
 
 func render(p *DisplayPayload) {
@@ -69,18 +73,18 @@ func render(p *DisplayPayload) {
 				{Title: "Languages", Lines: langGraph, Width: langWidth},
 				{Title: "Projects", Lines: projectsLines, Width: projectsWidth},
 				{Title: "Categories", Lines: categoriesLines, Width: categoriesWidth},
-				{Title: "Machines", Lines: machinesLines, Width: machinesWidth},
 			},
 			Right: []CardConfig{
 				{Title: "Stats", Lines: fields, Width: fieldsWidth},
 				{Title: "Editors", Lines: editorsLines, Width: editorsWidth},
 				{Title: "Operating Systems", Lines: osLines, Width: osWidth},
+				{Title: "Machines", Lines: machinesLines, Width: machinesWidth},
 			},
 		}
 		renderCardSection(fullSection)
 	} else {
 		langGraphCard, langWidth := cardify(langGraph, "Languages", langWidth, 0)
-		printLeftRight(langGraphCard, fields, spacing, langWidth)
+		printLeftRight(langGraphCard, fields, 2, langWidth)
 	}
 }
 

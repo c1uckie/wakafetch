@@ -169,7 +169,7 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 func DisplayBreakdown(data []types.DayData) {
 	dailyTable, tableWidth := dailyBreakdownStr(data)
 	cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
-	printLeftRight(cardTable, []string{}, spacing, 0)
+	printLeftRight(cardTable, []string{}, gapX, 0)
 }
 
 func processJobs(data []types.DayData, jobs []job) {

@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/sahaj-b/wakafetch/ui"
 )
@@ -43,31 +44,76 @@ func main() {
 	}
 }
 
+type flagInfo struct {
+	longName    string
+	shortName   string
+	defaultVal  any
+	description string
+	flagType    string
+}
+
+var flagDefs = []flagInfo{
+	{"range", "r", "7d", "Range of data to fetch (today/7d/30d/6m/1y/all) (default: 7d)", "string"},
+	{"api-key", "k", "", "Your WakaTime/Wakapi API key (overrides config)", "string"},
+	{"full", "f", false, "Display full statistics", ""},
+	{"days", "d", 0, "Number of days to fetch data for (overrides --range)", "int"},
+	{"daily", "D", false, "Display daily breakdown", ""},
+	{"no-colors", "n", false, "Disable colored output", ""},
+	{"help", "h", false, "Display help information", ""},
+}
+
 func parseFlags() Config {
 	config := Config{
-		rangeFlag:   flag.String("range", "7d", "Range of data to fetch (today/7d/30d/6m/1y/all)"),
-		apiKeyFlag:  flag.String("api-key", "", "Your WakaTime/Wakapi API key (overrides config)"),
-		fullFlag:    flag.Bool("full", false, "Display full statistics"),
-		daysFlag:    flag.Int("days", 0, "Number of days to fetch data for (overrides --range)"),
-		dailyFlag:   flag.Bool("daily", false, "Display daily breakdown"),
-		noColorFlag: flag.Bool("no-colors", false, "Disable colored output"),
-		helpFlag:    flag.Bool("help", false, "Display help information"),
+		rangeFlag:   flag.String("range", "7d", ""),
+		apiKeyFlag:  flag.String("api-key", "", ""),
+		fullFlag:    flag.Bool("full", false, ""),
+		daysFlag:    flag.Int("days", 0, ""),
+		dailyFlag:   flag.Bool("daily", false, ""),
+		noColorFlag: flag.Bool("no-colors", false, ""),
+		helpFlag:    flag.Bool("help", false, ""),
 	}
+
+	flag.StringVar(config.rangeFlag, "r", "7d", "")
+	flag.StringVar(config.apiKeyFlag, "k", "", "")
+	flag.BoolVar(config.fullFlag, "f", false, "")
+	flag.IntVar(config.daysFlag, "d", 0, "")
+	flag.BoolVar(config.dailyFlag, "D", false, "")
+	flag.BoolVar(config.noColorFlag, "n", false, "")
+	flag.BoolVar(config.helpFlag, "h", false, "")
+
 	flag.Parse()
 
+	if !*config.noColorFlag && colorsShouldBeEnabled() {
+		ui.EnableColors()
+	}
+
 	if *config.helpFlag {
-		fmt.Println("Usage: wakafetch [options]")
-		fmt.Println("Options:")
-		flag.PrintDefaults()
+		fmt.Println(ui.Clr.Bold + "Usage:" + ui.Clr.Reset + " wakafetch [options]")
+		fmt.Println(ui.Clr.Bold + "Options:" + ui.Clr.Reset)
+
+		maxWidth := 0
+		for _, f := range flagDefs {
+			width := len("-" + f.shortName + ", --" + f.longName + " " + f.flagType)
+			if width > maxWidth {
+				maxWidth = width
+			}
+		}
+
+		for _, f := range flagDefs {
+			flag := fmt.Sprintf("-%s, --%s", f.shortName, f.longName)
+			flagLen := len(flag)
+			if f.flagType != "" {
+				flagLen = len(flag + " " + f.flagType)
+				flag += " " + ui.Clr.Blue + f.flagType + ui.Clr.Reset
+			}
+			padding := strings.Repeat(" ", maxWidth-flagLen+2)
+			fmt.Println("  " + ui.Clr.Green + flag + ui.Clr.Reset + padding + f.description)
+		}
 		os.Exit(0)
 	}
 
 	if *config.daysFlag < 0 {
 		log.Fatal("Invalid value for --days: must be a positive integer")
-	}
-
-	if !*config.noColorFlag && colorsShouldBeEnabled() {
-		ui.EnableColors()
 	}
 
 	return config
