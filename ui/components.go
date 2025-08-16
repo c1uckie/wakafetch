@@ -31,11 +31,10 @@ func render(p *DisplayPayload) {
 			printLeftRight(categoriesGraph, osGraph, spacing, maxWidth)
 		}
 
-		if len(p.Machines) > 0 || len(p.Entities) > 0 {
+		if len(p.Machines) > 0 {
 			fmt.Println(Clr.Gray + divider + Clr.Reset)
-			machinesGraph, maxWidth := graphWithHeaderStr("Machines", p.Machines)
-			entitiesGraph, _ := graphWithHeaderStr("Entities", p.Entities)
-			printLeftRight(machinesGraph, entitiesGraph, spacing, maxWidth)
+			machinesGraph, _ := graphWithHeaderStr("Machines", p.Machines)
+			printLeftRight(machinesGraph, []string{}, spacing, 0)
 		}
 
 		if len(p.DailyData) > 0 {

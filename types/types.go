@@ -16,7 +16,6 @@ type DayData struct {
 	Categories       []StatItem `json:"categories"`
 	Dependencies     []StatItem `json:"dependencies"`
 	Editors          []StatItem `json:"editors"`
-	Entities         []StatItem `json:"entities"`
 	Languages        []StatItem `json:"languages"`
 	Machines         []StatItem `json:"machines"`
 	OperatingSystems []StatItem `json:"operating_systems"`
