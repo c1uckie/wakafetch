@@ -21,6 +21,7 @@ type DisplayPayload struct {
 	OperatingSystems []types.StatItem
 	Categories       []types.StatItem
 	Machines         []types.StatItem
+	Entities         []types.StatItem
 	Full             bool
 }
 
@@ -70,6 +71,7 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 		OperatingSystems: stats.OperatingSystems,
 		Categories:       stats.Categories,
 		Machines:         stats.Machines,
+		Entities:         nil, // stats response doesn't have entities
 		Full:             full,
 	}
 	render(&payload)
@@ -89,13 +91,7 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	languages := make(map[string]float64)
 
 	// Only process additional data if full mode is on
-	var projects, editors, operatingSystems, categories, machines map[string]float64
-
-	projects = make(map[string]float64)
-	editors = make(map[string]float64)
-	operatingSystems = make(map[string]float64)
-	categories = make(map[string]float64)
-	machines = make(map[string]float64)
+	projects, editors, operatingSystems, categories, machines, entities := make(map[string]float64), make(map[string]float64), make(map[string]float64), make(map[string]float64), make(map[string]float64), make(map[string]float64)
 
 	aggregateJobs := []job{
 		{languages, func(day types.DayData) []types.StatItem { return day.Languages }},
@@ -104,6 +100,7 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 		{operatingSystems, func(day types.DayData) []types.StatItem { return day.OperatingSystems }},
 		{categories, func(day types.DayData) []types.StatItem { return day.Categories }},
 		{machines, func(day types.DayData) []types.StatItem { return day.Machines }},
+		{entities, func(day types.DayData) []types.StatItem { return day.Entities }},
 	}
 
 	processJobs(data.Data, aggregateJobs)

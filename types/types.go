@@ -12,6 +12,7 @@ type StatItem struct {
 }
 
 type DayData struct {
+	Entities         []StatItem `json:"entities"`
 	Branches         []StatItem `json:"branches"`
 	Categories       []StatItem `json:"categories"`
 	Dependencies     []StatItem `json:"dependencies"`

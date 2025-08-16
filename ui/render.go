@@ -2,6 +2,9 @@ package ui
 
 import (
 	"fmt"
+	"os/exec"
+	"runtime"
+	"strconv"
 	"strings"
 )
 
@@ -60,6 +63,7 @@ func render(p *DisplayPayload) {
 	fields, fieldsWidth := fieldsStr(p.Heading, p.Stats)
 	langLimit := len(fields)
 	langGraph, langWidth := graphStr(p.Languages, langLimit)
+	shrink := getTerminalCols() < 96
 
 	if p.Full {
 		projectsLines, projectsWidth := graphStr(p.Projects, 0)
@@ -67,24 +71,47 @@ func render(p *DisplayPayload) {
 		machinesLines, machinesWidth := graphStr(p.Machines, 0)
 		editorsLines, editorsWidth := graphStr(p.Editors, 0)
 		osLines, osWidth := graphStr(p.OperatingSystems, 0)
-
-		fullSection := CardSection{
-			Left: []CardConfig{
-				{Title: "Languages", Lines: langGraph, Width: langWidth},
-				{Title: "Projects", Lines: projectsLines, Width: projectsWidth},
-				{Title: "Categories", Lines: categoriesLines, Width: categoriesWidth},
-			},
-			Right: []CardConfig{
-				{Title: "Stats", Lines: fields, Width: fieldsWidth},
-				{Title: "Editors", Lines: editorsLines, Width: editorsWidth},
-				{Title: "Operating Systems", Lines: osLines, Width: osWidth},
-				{Title: "Machines", Lines: machinesLines, Width: machinesWidth},
-			},
+		entitiesLines, entitiesWidth := graphStr(p.Entities, 5)
+		var fullSection CardSection
+		if !shrink {
+			fullSection = CardSection{
+				Left: []CardConfig{
+					{Title: "Languages", Lines: langGraph, Width: langWidth},
+					{Title: "Projects", Lines: projectsLines, Width: projectsWidth},
+					{Title: "Categories", Lines: categoriesLines, Width: categoriesWidth},
+					{Title: "Entities", Lines: entitiesLines, Width: entitiesWidth},
+				},
+				Right: []CardConfig{
+					{Title: "Stats", Lines: fields, Width: fieldsWidth},
+					{Title: "Editors", Lines: editorsLines, Width: editorsWidth},
+					{Title: "Operating Systems", Lines: osLines, Width: osWidth},
+					{Title: "Machines", Lines: machinesLines, Width: machinesWidth},
+				},
+			}
+		} else {
+			fullSection = CardSection{
+				Left: []CardConfig{
+					{Title: "Languages", Lines: langGraph, Width: langWidth},
+					{Title: "Stats", Lines: fields, Width: fieldsWidth},
+					{Title: "Projects", Lines: projectsLines, Width: projectsWidth},
+					{Title: "Categories", Lines: categoriesLines, Width: categoriesWidth},
+					{Title: "Editors", Lines: editorsLines, Width: editorsWidth},
+					{Title: "Entities", Lines: entitiesLines, Width: entitiesWidth},
+					{Title: "Operating Systems", Lines: osLines, Width: osWidth},
+					{Title: "Machines", Lines: machinesLines, Width: machinesWidth},
+				},
+				Right: []CardConfig{},
+			}
 		}
 		renderCardSection(fullSection)
 	} else {
 		langGraphCard, langWidth := cardify(langGraph, "Languages", langWidth, 0)
-		printLeftRight(langGraphCard, fields, 2, langWidth)
+		if shrink {
+			printLeftRight(langGraphCard, []string{}, 2, langWidth)
+			printLeftRight(fields, []string{}, 2, fieldsWidth)
+		} else {
+			printLeftRight(langGraphCard, fields, 2, langWidth)
+		}
 	}
 }
 
@@ -168,4 +195,35 @@ func printLeftRight(left, right []string, spacing, leftWidth int) {
 			fmt.Println(strings.Repeat(" ", pad) + right[i])
 		}
 	}
+}
+
+func getTerminalCols() int {
+	const fallback = 9999
+	var sizeStr string
+	switch runtime.GOOS {
+	case "linux":
+		out, err := exec.Command("stty", "-F", "/dev/tty", "size").Output()
+		if err != nil || len(out) == 0 {
+			return fallback
+		}
+		sizeStr = strings.TrimSpace(string(out))
+	case "darwin":
+		out, err := exec.Command("sh", "-c", "stty size < /dev/tty").Output()
+		if err != nil || len(out) == 0 {
+			return fallback
+		}
+		sizeStr = strings.TrimSpace(string(out))
+	default:
+		return fallback
+	}
+
+	size := strings.Split(sizeStr, " ")
+	if len(size) < 2 {
+		return fallback
+	}
+	colStr := size[1]
+	if width, err := strconv.Atoi(strings.TrimSpace(string(colStr))); err == nil {
+		return width
+	}
+	return fallback
 }
