@@ -81,35 +81,15 @@ func parseFlags() Config {
 	flag.BoolVar(config.noColorFlag, "n", false, "")
 	flag.BoolVar(config.helpFlag, "h", false, "")
 
+	flag.Usage = showCustomHelp
 	flag.Parse()
 
-	if !*config.noColorFlag && colorsShouldBeEnabled() {
-		ui.EnableColors()
+	if *config.noColorFlag || !colorsShouldBeEnabled() {
+		ui.DisableColors()
 	}
 
 	if *config.helpFlag {
-		fmt.Println(ui.Clr.Bold + "Usage:" + ui.Clr.Reset + " wakafetch [options]")
-		fmt.Println(ui.Clr.Bold + "Options:" + ui.Clr.Reset)
-
-		maxWidth := 0
-		for _, f := range flagDefs {
-			width := len("-" + f.shortName + ", --" + f.longName + " " + f.flagType)
-			if width > maxWidth {
-				maxWidth = width
-			}
-		}
-
-		for _, f := range flagDefs {
-			flag := fmt.Sprintf("-%s, --%s", f.shortName, f.longName)
-			flagLen := len(flag)
-			if f.flagType != "" {
-				flagLen = len(flag + " " + f.flagType)
-				flag += " " + ui.Clr.Blue + f.flagType + ui.Clr.Reset
-			}
-			padding := strings.Repeat(" ", maxWidth-flagLen+2)
-			fmt.Println("  " + ui.Clr.Green + flag + ui.Clr.Reset + padding + f.description)
-		}
-		os.Exit(0)
+		showCustomHelp()
 	}
 
 	if *config.daysFlag < 0 {
@@ -117,6 +97,31 @@ func parseFlags() Config {
 	}
 
 	return config
+}
+
+func showCustomHelp() {
+	fmt.Println(ui.Clr.Bold + "Usage:" + ui.Clr.Reset + " wakafetch [options]")
+	fmt.Println(ui.Clr.Bold + "Options:" + ui.Clr.Reset)
+
+	maxWidth := 0
+	for _, f := range flagDefs {
+		width := len("-" + f.shortName + ", --" + f.longName + " " + f.flagType)
+		if width > maxWidth {
+			maxWidth = width
+		}
+	}
+
+	for _, f := range flagDefs {
+		flag := fmt.Sprintf("-%s, --%s", f.shortName, f.longName)
+		flagLen := len(flag)
+		if f.flagType != "" {
+			flagLen = len(flag + " " + f.flagType)
+			flag += " " + ui.Clr.Blue + f.flagType + ui.Clr.Reset
+		}
+		padding := strings.Repeat(" ", maxWidth-flagLen+2)
+		fmt.Println("  " + ui.Clr.Green + flag + ui.Clr.Reset + padding + f.description)
+	}
+	os.Exit(0)
 }
 
 func loadAPIConfig(config Config) (string, string) {
