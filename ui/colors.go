@@ -13,27 +13,27 @@ type Colors struct {
 }
 
 var Clr Colors = Colors{
-	MidGray:  "",
-	Red:      "",
-	Yellow:   "",
-	BoldBlue: "",
-	Blue:     "",
-	Green:    "",
-	Gray:     "",
-	Bold:     "",
-	Reset:    "",
+	MidGray:  "\x1b[38;2;128;128;128m",
+	Red:      "\x1b[31m",
+	Yellow:   "\x1b[33m",
+	BoldBlue: "\x1b[1;34m",
+	Blue:     "\x1b[34m",
+	Green:    "\x1b[32m",
+	Gray:     "\x1b[90m",
+	Bold:     "\x1b[1m",
+	Reset:    "\x1b[0m",
 }
 
-func EnableColors() {
+func DisableColors() {
 	Clr = Colors{
-		MidGray:  "\x1b[38;2;128;128;128m",
-		Red:      "\x1b[31m",
-		Yellow:   "\x1b[33m",
-		BoldBlue: "\x1b[1;34m",
-		Blue:     "\x1b[34m",
-		Green:    "\x1b[32m",
-		Gray:     "\x1b[90m",
-		Bold:     "\x1b[1m",
-		Reset:    "\x1b[0m",
+		MidGray:  "",
+		Red:      "",
+		Yellow:   "",
+		BoldBlue: "",
+		Blue:     "",
+		Green:    "",
+		Gray:     "",
+		Bold:     "",
+		Reset:    "",
 	}
 }

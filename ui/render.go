@@ -107,8 +107,8 @@ func render(p *DisplayPayload) {
 	} else {
 		langGraphCard, langWidth := cardify(langGraph, "Languages", langWidth, 0)
 		if shrink {
-			printLeftRight(langGraphCard, []string{}, 2, langWidth)
-			printLeftRight(fields, []string{}, 2, fieldsWidth)
+			printStrs(langGraphCard)
+			printStrs(fields)
 		} else {
 			printLeftRight(langGraphCard, fields, 2, langWidth)
 		}
@@ -170,6 +170,12 @@ func fieldsStr(heading string, stats []Field) ([]string, int) {
 	}
 
 	return output, maxWidth
+}
+
+func printStrs(strs []string) {
+	for _, str := range strs {
+		fmt.Println(str)
+	}
 }
 
 func printLeftRight(left, right []string, spacing, leftWidth int) {

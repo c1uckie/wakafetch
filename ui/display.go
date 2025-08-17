@@ -166,7 +166,13 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 func DisplayBreakdown(data []types.DayData) {
 	dailyTable, tableWidth := dailyBreakdownStr(data)
 	cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
-	printLeftRight(cardTable, []string{}, gapX, 0)
+	printStrs(cardTable)
+	if Clr.Blue == "" {
+		return // dont display heatmap if colors disabled
+	}
+	heatmapStrs, heatmapWidth := heatmap(data)
+	cardHeatmap, _ := cardify(heatmapStrs, "Heatmap", heatmapWidth, 0)
+	printStrs(cardHeatmap)
 }
 
 func processJobs(data []types.DayData, jobs []job) {
