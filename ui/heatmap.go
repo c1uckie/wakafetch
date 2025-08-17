@@ -11,8 +11,6 @@ import (
 func heatmap(days []types.DayData) ([]string, int) {
 	const heatmapChar = "■"               // █ ❐ ▪ ◼ 🙩 🙫 ⛝ ⏹ 🞕 🞔 🞖
 	const highlight = "\x1b[38;2;0;%v;0m" // \x1b[38;2;R;G;Bm
-	const height = 4
-
 	if len(days) == 0 {
 		return []string{}, 0
 	}
@@ -24,6 +22,15 @@ func heatmap(days []types.DayData) ([]string, int) {
 	endDay, err := time.Parse("2006-01-02", strings.Split(days[len(days)-1].Range.Start, "T")[0])
 	if err != nil {
 		return []string{}, 0
+	}
+
+	height := 4
+	numOfDays := int(endDay.Sub(startDay).Hours()/24) + 1
+	cols := getTerminalCols()
+	width := 2*int((numOfDays+height-1)/height) - 1 // 2*ciel -1
+	for width+4 > cols {
+		height++
+		width = 2*int((numOfDays+height-1)/height) - 1
 	}
 
 	for _, day := range days {
@@ -59,8 +66,5 @@ func heatmap(days []types.DayData) ([]string, int) {
 		}
 		i++
 	}
-	numOfDays := int(endDay.Sub(startDay).Hours()/24) + 1
-	columns := (numOfDays + height - 1) / height // ceil
-	width := columns*2 - 1
 	return output, width
 }
