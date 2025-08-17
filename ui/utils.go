@@ -114,6 +114,7 @@ func topItemName(items []types.StatItem, skipUnknown bool) string {
 
 func Errorln(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, Clr.Red+format+Clr.Reset+"\n", args...)
+	os.Exit(1)
 }
 
 func Warnln(format string, args ...any) {

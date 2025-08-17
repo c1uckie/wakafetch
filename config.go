@@ -6,6 +6,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/sahaj-b/wakafetch/ui"
 )
 
 func parseConfig() (string, string, error) {
@@ -61,8 +63,7 @@ func getConfigPath() string {
 	var configFile string
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error getting home directory: %v\n", err)
-		os.Exit(1)
+		ui.Errorln("Error getting home directory: %v\n", err)
 	}
 	configFile = filepath.Join(homeDir, ".wakatime.cfg")
 

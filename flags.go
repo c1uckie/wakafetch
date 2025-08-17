@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
@@ -54,7 +53,7 @@ func parseFlags() Config {
 	}
 
 	if *config.daysFlag < 0 {
-		log.Fatal("Invalid value for --days: must be a positive integer")
+		ui.Errorln("Invalid value for --days: must be a positive integer")
 	}
 
 	return config

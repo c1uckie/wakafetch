@@ -163,13 +163,13 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	render(payload)
 }
 
-func DisplayBreakdown(data []types.DayData) {
+func DisplayBreakdown(data []types.DayData, heading string) {
 	if len(data) == 0 {
 		Warnln("No daily data available")
 		return
 	}
 	dailyTable, tableWidth := dailyBreakdownStr(data)
-	cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
+	cardTable, _ := cardify(dailyTable, heading, tableWidth, 0)
 	printStrs(cardTable)
 	if Clr.Blue == "" {
 		return // dont display heatmap if colors disabled

@@ -7,16 +7,6 @@ import (
 	"github.com/sahaj-b/wakafetch/types"
 )
 
-func graphCard(title string, item []types.StatItem, limit int) ([]string, int) {
-	graphLines, width := graphStr(item, limit)
-
-	if len(graphLines) == 0 {
-		return []string{}, 0
-	}
-
-	return cardify(graphLines, title, width, 0)
-}
-
 func graphStr(items []types.StatItem, limit int) ([]string, int) {
 	if len(items) == 0 {
 		return []string{}, 0

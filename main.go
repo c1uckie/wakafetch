@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/sahaj-b/wakafetch/ui"
@@ -35,7 +34,7 @@ func main() {
 func loadAPIConfig(config Config) (string, string) {
 	apiURL, apiKey, err := parseConfig()
 	if err != nil {
-		log.Fatal(err.Error())
+		ui.Errorln(err.Error())
 	}
 
 	if *config.apiKeyFlag != "" {
@@ -54,7 +53,7 @@ func handleStatsFlow(config Config, apiKey, apiURL string) {
 
 	data, err := fetchStats(apiKey, apiURL, rangeStr)
 	if err != nil {
-		log.Fatal(err.Error())
+		ui.Errorln(err.Error())
 	}
 	ui.DisplayStats(data, *config.fullFlag, rangeStr)
 }
@@ -62,9 +61,9 @@ func handleStatsFlow(config Config, apiKey, apiURL string) {
 func handleSummaryFlow(config Config, apiKey, apiURL string) {
 	rangeStr := getRangeStr(*config.rangeFlag)
 	days := *config.daysFlag
-
+	validRange := true
 	if days == 0 {
-		days = map[string]int{
+		days, validRange = map[string]int{
 			"today":         1,
 			"last_7_days":   7,
 			"last_30_days":  30,
@@ -73,14 +72,14 @@ func handleSummaryFlow(config Config, apiKey, apiURL string) {
 		}[rangeStr]
 	}
 
-	data, err := fetchSummary(apiKey, apiURL, days)
-	if err != nil {
-		log.Fatal(err.Error())
+	if !validRange {
+		ui.Errorln("This range isn't supported with `--daily` or `--heatmap` flags. Use `--days` instead")
+		return
 	}
 
-	if *config.dailyFlag {
-		ui.DisplayBreakdown(data.Data)
-		return
+	data, err := fetchSummary(apiKey, apiURL, days)
+	if err != nil {
+		ui.Errorln(err.Error())
 	}
 
 	var heading string
@@ -102,6 +101,11 @@ func handleSummaryFlow(config Config, apiKey, apiURL string) {
 		heading = headingMap[rangeStr]
 	}
 
+	if *config.dailyFlag {
+		ui.DisplayBreakdown(data.Data, heading)
+		return
+	}
+
 	if *config.heatmapFlag {
 		ui.DisplayHeatmap(data.Data, heading)
 		return
@@ -121,7 +125,7 @@ func getRangeStr(rangeFlag string) string {
 	}
 	rangeStr, exists := rangeStrMap[rangeFlag]
 	if !exists {
-		log.Fatalf("Invalid range: '%s', must be one of %stoday, 7d, 30d, 6m, 1y, all", rangeFlag, ui.Clr.Green)
+		ui.Errorln("Invalid range: '%s', must be one of %stoday, 7d, 30d, 6m, 1y, all", rangeFlag, ui.Clr.Green)
 	}
 	return rangeStr
 }
