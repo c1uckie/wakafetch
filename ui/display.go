@@ -53,14 +53,21 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 	var statsMap []Field
 	statsMap = []Field{
 		{"Total Time", totalTime},
-		{"Daily Avg", dailyAvg},
-		{"Top Project", topProject},
-		{"Top Editor", topEditor},
-		{"Top Category", topCategory},
-		{"Top OS", topOS},
-		{"Languages", numLangs},
-		{"Projects", numProjects},
 	}
+
+	if stats.DaysIncludingHolidays > 1 {
+		statsMap = append(statsMap,
+			Field{"Daily Avg", dailyAvg},
+		)
+	}
+
+	statsMap = append(statsMap,
+		Field{"Top Project", topProject},
+		Field{"Top Editor", topEditor},
+		Field{"Top OS", topOS},
+		Field{"Languages", numLangs},
+		Field{"Projects", numProjects},
+	)
 
 	payload := DisplayPayload{
 		Heading:          heading,
@@ -138,16 +145,23 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 	var statsMap []Field
 	statsMap = []Field{
 		{"Total Time", totalTime},
-		{"Daily Avg", dailyAvg},
-		{"Active Days", activeDays},
-		{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
-		{"Top Project", topProject},
-		{"Top Editor", topEditor},
-		{"Top OS", topOS},
-		{"Languages", numLangs},
-		{"Projects", numProjects},
-		// {"Top Category", topCategory},
 	}
+
+	if len(data.Data) > 1 {
+		statsMap = append(statsMap,
+			Field{"Daily Avg", dailyAvg},
+			Field{"Active Days", activeDays},
+			Field{"Best Day", fmt.Sprintf("%s (%s)", formatBestDay(busiestDay), timeFmt(busiestDaySeconds))},
+		)
+	}
+
+	statsMap = append(statsMap,
+		Field{"Top Project", topProject},
+		Field{"Top Editor", topEditor},
+		Field{"Top OS", topOS},
+		Field{"Languages", numLangs},
+		Field{"Projects", numProjects},
+	)
 
 	payload := &DisplayPayload{
 		Heading:          heading,
