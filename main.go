@@ -1,11 +1,9 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/sahaj-b/wakafetch/ui"
 )
@@ -42,86 +40,6 @@ func main() {
 	} else {
 		handleStatsFlow(config, apiKey, apiURL)
 	}
-}
-
-type flagInfo struct {
-	longName    string
-	shortName   string
-	defaultVal  any
-	description string
-	flagType    string
-}
-
-var flagDefs = []flagInfo{
-	{"range", "r", "7d", "Range of data to fetch (today/7d/30d/6m/1y/all) (default: 7d)", "string"},
-	{"api-key", "k", "", "Your WakaTime/Wakapi API key (overrides config)", "string"},
-	{"full", "f", false, "Display full statistics", ""},
-	{"days", "d", 0, "Number of days to fetch data for (overrides --range)", "int"},
-	{"daily", "D", false, "Display daily breakdown", ""},
-	{"no-colors", "n", false, "Disable colored output", ""},
-	{"help", "h", false, "Display help information", ""},
-}
-
-func parseFlags() Config {
-	config := Config{
-		rangeFlag:   flag.String("range", "7d", ""),
-		apiKeyFlag:  flag.String("api-key", "", ""),
-		fullFlag:    flag.Bool("full", false, ""),
-		daysFlag:    flag.Int("days", 0, ""),
-		dailyFlag:   flag.Bool("daily", false, ""),
-		noColorFlag: flag.Bool("no-colors", false, ""),
-		helpFlag:    flag.Bool("help", false, ""),
-	}
-
-	flag.StringVar(config.rangeFlag, "r", "7d", "")
-	flag.StringVar(config.apiKeyFlag, "k", "", "")
-	flag.BoolVar(config.fullFlag, "f", false, "")
-	flag.IntVar(config.daysFlag, "d", 0, "")
-	flag.BoolVar(config.dailyFlag, "D", false, "")
-	flag.BoolVar(config.noColorFlag, "n", false, "")
-	flag.BoolVar(config.helpFlag, "h", false, "")
-
-	flag.Usage = showCustomHelp
-	flag.Parse()
-
-	if *config.noColorFlag || !colorsShouldBeEnabled() {
-		ui.DisableColors()
-	}
-
-	if *config.helpFlag {
-		showCustomHelp()
-	}
-
-	if *config.daysFlag < 0 {
-		log.Fatal("Invalid value for --days: must be a positive integer")
-	}
-
-	return config
-}
-
-func showCustomHelp() {
-	fmt.Println(ui.Clr.Bold + "Usage:" + ui.Clr.Reset + " wakafetch [options]")
-	fmt.Println(ui.Clr.Bold + "Options:" + ui.Clr.Reset)
-
-	maxWidth := 0
-	for _, f := range flagDefs {
-		width := len("-" + f.shortName + ", --" + f.longName + " " + f.flagType)
-		if width > maxWidth {
-			maxWidth = width
-		}
-	}
-
-	for _, f := range flagDefs {
-		flag := fmt.Sprintf("-%s, --%s", f.shortName, f.longName)
-		flagLen := len(flag)
-		if f.flagType != "" {
-			flagLen = len(flag + " " + f.flagType)
-			flag += " " + ui.Clr.Blue + f.flagType + ui.Clr.Reset
-		}
-		padding := strings.Repeat(" ", maxWidth-flagLen+2)
-		fmt.Println("  " + ui.Clr.Green + flag + ui.Clr.Reset + padding + f.description)
-	}
-	os.Exit(0)
 }
 
 func loadAPIConfig(config Config) (string, string) {
@@ -183,7 +101,27 @@ func handleSummaryFlow(config Config, apiKey, apiURL string) {
 		ui.Warnln("No data available for the selected period.")
 		return
 	}
-	ui.DisplaySummary(data, *config.fullFlag, rangeStr)
+
+	var heading string
+	if *config.daysFlag != 0 {
+		if days == 1 {
+			heading = "Today"
+		} else {
+			heading = fmt.Sprintf("Last %d days", days)
+		}
+	} else {
+		headingMap := map[string]string{
+			"today":         "Today",
+			"last_7_days":   "Last 7 days",
+			"last_30_days":  "Last 30 days",
+			"last_6_months": "Last 6 months",
+			"last_year":     "Last year",
+			"all_time":      "All time",
+		}
+		heading = headingMap[rangeStr]
+	}
+
+	ui.DisplaySummary(data, *config.fullFlag, heading)
 }
 
 func getRangeStr(rangeFlag string) string {
