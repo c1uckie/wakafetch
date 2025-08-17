@@ -52,13 +52,15 @@ func heatmap(days []types.DayData) ([]string, int) {
 
 	// ensure same width for all lines
 	for i%height != 0 {
-		output[i%height] += "  "
+		if i/height < 1 {
+			output[i%height] += " "
+		} else {
+			output[i%height] += "  "
+		}
 		i++
 	}
 	numOfDays := int(endDay.Sub(startDay).Hours()/24) + 1
-	fmt.Println("Number of days:", numOfDays)
 	columns := (numOfDays + height - 1) / height // ceil
 	width := columns*2 - 1
-	println("Width:", width)
 	return output, width
 }

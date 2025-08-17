@@ -8,28 +8,18 @@ import (
 	"github.com/sahaj-b/wakafetch/ui"
 )
 
-type Config struct {
-	rangeFlag   *string
-	apiKeyFlag  *string
-	fullFlag    *bool
-	daysFlag    *int
-	dailyFlag   *bool
-	noColorFlag *bool
-	helpFlag    *bool
-}
-
 // okay so there are 2 types of responses/endpoints:
 // /summary response:
 // - gives summary of EACH day, so more granular data
 // - have to aggregate data manually for viewing stats
 // - supports custom date ranges
-// - so, its called when --days(custom range) or --daily(granular daily breakdown) is used
+// - so, its called when --days(custom range) or --daily/heatmap(granular daily breakdown) is used
 
 // /stats response:
 // - gives summary of the ENTIRE range in a single response
 // - no need for aggregation, efficient af
 // - doesn't support custom date ranges(only rangeStr)
-// - so, its the default unless --days or --daily is used
+// - so, its the default unless --days or --daily/heatmap is used
 
 func main() {
 	config := parseFlags()
@@ -56,7 +46,7 @@ func loadAPIConfig(config Config) (string, string) {
 }
 
 func shouldUseSummaryAPI(config Config) bool {
-	return *config.daysFlag != 0 || *config.dailyFlag
+	return *config.daysFlag != 0 || *config.dailyFlag || *config.heatmapFlag
 }
 
 func handleStatsFlow(config Config, apiKey, apiURL string) {
@@ -89,16 +79,7 @@ func handleSummaryFlow(config Config, apiKey, apiURL string) {
 	}
 
 	if *config.dailyFlag {
-		if len(data.Data) == 0 {
-			ui.Warnln("No daily data available")
-			return
-		}
 		ui.DisplayBreakdown(data.Data)
-		return
-	}
-
-	if len(data.Data) == 0 {
-		ui.Warnln("No data available for the selected period.")
 		return
 	}
 
@@ -119,6 +100,11 @@ func handleSummaryFlow(config Config, apiKey, apiURL string) {
 			"all_time":      "All time",
 		}
 		heading = headingMap[rangeStr]
+	}
+
+	if *config.heatmapFlag {
+		ui.DisplayHeatmap(data.Data, heading)
+		return
 	}
 
 	ui.DisplaySummary(data, *config.fullFlag, heading)

@@ -10,6 +10,17 @@ import (
 	"github.com/sahaj-b/wakafetch/ui"
 )
 
+type Config struct {
+	rangeFlag   *string
+	apiKeyFlag  *string
+	fullFlag    *bool
+	daysFlag    *int
+	dailyFlag   *bool
+	heatmapFlag *bool
+	noColorFlag *bool
+	helpFlag    *bool
+}
+
 type flagInfo struct {
 	longName    string
 	shortName   string
@@ -23,10 +34,11 @@ func parseFlags() Config {
 	registeredFlags = nil
 
 	config.rangeFlag = config.stringFlag("range", "r", "7d", "Range of data to fetch (today/7d/30d/6m/1y/all) (default: 7d)")
-	config.apiKeyFlag = config.stringFlag("api-key", "k", "", "Your WakaTime/Wakapi API key (overrides config)")
-	config.fullFlag = config.boolFlag("full", "f", false, "Display full statistics")
 	config.daysFlag = config.intFlag("days", "d", 0, "Number of days to fetch data for (overrides --range)")
+	config.fullFlag = config.boolFlag("full", "f", false, "Display full statistics")
 	config.dailyFlag = config.boolFlag("daily", "D", false, "Display daily breakdown")
+	config.heatmapFlag = config.boolFlag("heatmap", "H", false, "Display heatmap of daily activity")
+	config.apiKeyFlag = config.stringFlag("api-key", "k", "", "Your WakaTime/Wakapi API key (overrides config)")
 	config.noColorFlag = config.boolFlag("no-colors", "n", false, "Disable colored output")
 	config.helpFlag = config.boolFlag("help", "h", false, "Display help information")
 

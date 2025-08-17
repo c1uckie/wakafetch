@@ -164,6 +164,10 @@ func DisplaySummary(data *types.SummaryResponse, full bool, rangeStr string) {
 }
 
 func DisplayBreakdown(data []types.DayData) {
+	if len(data) == 0 {
+		Warnln("No daily data available")
+		return
+	}
 	dailyTable, tableWidth := dailyBreakdownStr(data)
 	cardTable, _ := cardify(dailyTable, "Daily Breakdown", tableWidth, 0)
 	printStrs(cardTable)
@@ -172,6 +176,22 @@ func DisplayBreakdown(data []types.DayData) {
 	}
 	heatmapStrs, heatmapWidth := heatmap(data)
 	cardHeatmap, _ := cardify(heatmapStrs, "Heatmap", heatmapWidth, 0)
+	printStrs(cardHeatmap)
+}
+
+func DisplayHeatmap(data []types.DayData, heading string) {
+	if len(data) == 0 {
+		Warnln("No daily data available")
+		return
+	}
+
+	heatmapStrs, heatmapWidth := heatmap(data)
+	if len(heatmapStrs) == 0 {
+		Warnln("No heatmap data available")
+		return
+	}
+
+	cardHeatmap, _ := cardify(heatmapStrs, heading, heatmapWidth, 0)
 	printStrs(cardHeatmap)
 }
 
