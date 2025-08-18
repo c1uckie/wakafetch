@@ -17,6 +17,9 @@ func fetchSummary(apiKey, apiURL string, days int) (*types.SummaryResponse, erro
 	todayDate := today.Format("2006-01-02")
 	startDate := today.AddDate(0, 0, -days+1).Format("2006-01-02")
 	requestURL := fmt.Sprintf("%s/v1/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
+	if strings.HasSuffix(apiURL, "/v1") {
+		requestURL = fmt.Sprintf("%s/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
+	}
 	response, err := fetchApi[types.SummaryResponse](apiKey, requestURL)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch stats: %w", err)
@@ -27,6 +30,9 @@ func fetchSummary(apiKey, apiURL string, days int) (*types.SummaryResponse, erro
 func fetchStats(apiKey, apiURL, rangeStr string) (*types.StatsResponse, error) {
 	apiURL = strings.TrimSuffix(apiURL, "/")
 	requestURL := fmt.Sprintf("%s/v1/users/current/stats/%s", apiURL, rangeStr)
+	if strings.HasSuffix(apiURL, "/v1") {
+		requestURL = fmt.Sprintf("%s/users/current/stats/%s", apiURL, rangeStr)
+	}
 	// fmt.Println(requestURL)
 	response, err := fetchApi[types.StatsResponse](apiKey, requestURL)
 	if err != nil {

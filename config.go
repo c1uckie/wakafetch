@@ -25,6 +25,10 @@ func parseConfig() (string, string, error) {
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
 
+		if strings.HasPrefix(line, "#") || strings.HasPrefix(line, ";") {
+			continue
+		}
+
 		if strings.HasPrefix(line, "api_url") {
 			parts := strings.SplitN(line, "=", 2)
 			if len(parts) == 2 {

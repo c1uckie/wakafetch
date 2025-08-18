@@ -45,7 +45,6 @@ func DisplayStats(data *types.StatsResponse, full bool, rangeStr string) {
 	topProject := topItemName(stats.Projects, true)
 	topEditor := topItemName(stats.Editors, false)
 	topOS := topItemName(stats.OperatingSystems, false)
-	topCategory := topItemName(stats.Categories, false)
 
 	numLangs := fmt.Sprintf("%d", len(stats.Languages))
 	numProjects := fmt.Sprintf("%d", len(stats.Projects))
