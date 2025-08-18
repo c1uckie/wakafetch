@@ -1,4 +1,16 @@
-# Wakafetch
+<div align="center">
+  <h1>Wakafetch</h1>
+  <table>
+    <tr>
+      <td><img src="assets/base.jpg" alt="Screenshot 1" width="850">
+        </td>
+      <td><img src="assets/full.jpg" alt="Screenshot 3" width="400">
+
+        <img src="assets/heatmap.jpg" alt="Screenshot 2" width="400">
+    </td>
+    </tr>
+  </table>
+</div>
 
 A command-line tool to fetch and display your coding stats from WakaTime or Wakapi, right in your terminal.
 
