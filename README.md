@@ -4,8 +4,8 @@
     <tr>
       <td><img src="assets/base.jpg" alt="Screenshot 1" width="850">
         </td>
-      <td><img src="assets/full.jpg" alt="Screenshot 3" width="400">
-
+      <td>
+        <img src="assets/full.jpg" alt="Screenshot 3" width="400">
         <img src="assets/heatmap.jpg" alt="Screenshot 2" width="400">
     </td>
     </tr>
