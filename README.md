@@ -28,7 +28,13 @@ A command-line tool to fetch and display your coding stats from WakaTime or Waka
 
 ## 🚀 Installation
 
-## Will be available on AUR soon!
+### From Arch User Repository (AUR)
+
+AUR package: [wakafetch-git](https://aur.archlinux.org/packages/wakafetch-git)
+```bash
+yay -S wakafetch-git
+# or any other AUR helper
+```
 
 ### With Go
 
