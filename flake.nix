@@ -15,7 +15,7 @@
           name = "wakafetch";
 
           src = pkgs.fetchFromGitHub {
-            owner = "marc55s";
+            owner = "sahaj-b";
             repo = "wakafetch";
             rev = "d182dcef64945033ea256e0ccfd8bdb36382bc4c";
             sha256 ="sha256-smmmN1jDJpaZPXEQw+T4t2AJtMoNCaJoMFYYBuqz1Mo="; 
