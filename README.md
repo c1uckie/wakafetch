@@ -28,7 +28,9 @@ A command-line tool to fetch and display your coding stats from WakaTime or Waka
 
 ## 🚀 Installation
 
-### With Go (Recommended)
+## Will be available on AUR soon!
+
+### With Go
 
 It'll install the binary into your `$GOPATH/bin` or `$GOBIN`
 ```bash
