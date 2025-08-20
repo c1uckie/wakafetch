@@ -28,6 +28,49 @@ A command-line tool to fetch and display your coding stats from WakaTime or Waka
 
 ## 🚀 Installation
 
+### With Nix Flake
+```nix
+# flake.nix
+{
+    inputs = {
+        nixpkgs-unstable.url = "nixpkgs/nixos-unstable";
+        wakafetch = {
+            url = "github:sahaj-b/wakafetch";
+            inputs.nixpkgs.follows = "nixpkgs-unstable";
+        };
+    };
+
+    outputs = inputs@{self,  nixpkgs-unstable, ... }:
+        let
+            system = "x86_64-linux";
+
+            overlay = final: prev: {
+                wakafetch = inputs.wakafetch.packages.${system}.default;
+            };
+
+            pkgs = import nixpkgs-unstable {
+                inherit system;
+                overlays = [ overlay ];
+            };
+
+        in {
+            homeConfigurations.my-user = home-manager.lib.homeManagerConfiguration {
+                inherit pkgs;
+                modules = [
+                    {
+                        home.username = "my-user";
+                        home.homeDirectory = "/home/my-user";
+
+                        home.packages = [
+                            pkgs.wakafetch
+                        ];
+                    }
+                ];
+            };
+        };
+}
+```
+
 ### From Arch User Repository (AUR)
 
 AUR package: [wakafetch-git](https://aur.archlinux.org/packages/wakafetch-git)
