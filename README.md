@@ -133,6 +133,7 @@ Options:
   -H, --heatmap             Display heatmap of daily activity
   -k, --api-key <string>    Your WakaTime/Wakapi API key (overrides config)
   -n, --no-colors           Disable colored output
+  -j, --json                Output data in JSON format
   -h, --help                Display help information
 ```
 

@@ -3,7 +3,7 @@ package types
 type StatItem struct {
 	Name         string  `json:"name"`
 	TotalSeconds float64 `json:"total_seconds"`
-	Seconds      float64 `json:"seconds"`
+	// Seconds      float64 `json:"seconds"`
 	// Percent      float64 `json:"percent"`
 	// Digital      string  `json:"digital"`
 	// Hours        int     `json:"hours"`

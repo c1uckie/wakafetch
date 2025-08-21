@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 
@@ -55,6 +56,12 @@ func handleStatsFlow(config Config, apiKey, apiURL string) {
 	if err != nil {
 		ui.Errorln(err.Error())
 	}
+
+	if *config.jsonFlag {
+		outputJSON(data)
+		return
+	}
+
 	ui.DisplayStats(data, *config.fullFlag, rangeStr)
 }
 
@@ -80,6 +87,11 @@ func handleSummaryFlow(config Config, apiKey, apiURL string) {
 	data, err := fetchSummary(apiKey, apiURL, days)
 	if err != nil {
 		ui.Errorln(err.Error())
+	}
+
+	if *config.jsonFlag {
+		outputJSON(data)
+		return
 	}
 
 	var heading string
@@ -145,4 +157,12 @@ func colorsShouldBeEnabled() bool {
 		return false
 	}
 	return (file.Mode() & os.ModeCharDevice) != 0
+}
+
+func outputJSON(data any) {
+	jsonData, err := json.MarshalIndent(data, "", "  ")
+	if err != nil {
+		ui.Errorln("Failed to marshal JSON: %s", err.Error())
+	}
+	fmt.Println(string(jsonData))
 }

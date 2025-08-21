@@ -17,6 +17,7 @@ type Config struct {
 	dailyFlag   *bool
 	heatmapFlag *bool
 	noColorFlag *bool
+	jsonFlag    *bool
 	helpFlag    *bool
 }
 
@@ -39,6 +40,7 @@ func parseFlags() Config {
 	config.heatmapFlag = config.boolFlag("heatmap", "H", false, "Display heatmap of daily activity")
 	config.apiKeyFlag = config.stringFlag("api-key", "k", "", "Your WakaTime/Wakapi API key (overrides config)")
 	config.noColorFlag = config.boolFlag("no-colors", "n", false, "Disable colored output")
+	config.jsonFlag = config.boolFlag("json", "j", false, "Output data in JSON format")
 	config.helpFlag = config.boolFlag("help", "h", false, "Display help information")
 
 	flag.Usage = showCustomHelp
