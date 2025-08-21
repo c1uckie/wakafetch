@@ -29,6 +29,10 @@ A command-line tool to fetch and display your coding stats from WakaTime or Waka
 ## 🚀 Installation
 
 ### With Nix Flake
+
+<details>
+<summary>Click to expand flake configuration</summary>
+
 ```nix
 # flake.nix
 {
@@ -70,6 +74,8 @@ A command-line tool to fetch and display your coding stats from WakaTime or Waka
         };
 }
 ```
+
+</details>
 
 ### From Arch User Repository (AUR)
 
