@@ -45,8 +45,9 @@ func cardify(content []string, header string, contentWidth int, rightPad int) ([
 	}
 
 	// bottom border
-	bottomLine := borderBottomLeft + strings.Repeat(borderHorizontal, cardWidth-2) + borderBottomRight
+	actualCardWidth := cardWidth + rightPad
+	bottomLine := borderBottomLeft + strings.Repeat(borderHorizontal, actualCardWidth-2) + borderBottomRight
 	result = append(result, bottomLine)
 
-	return result, cardWidth
+	return result, actualCardWidth
 }
