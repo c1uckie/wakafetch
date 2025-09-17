@@ -16,7 +16,7 @@ func fetchSummary(apiKey, apiURL string, days int) (*types.SummaryResponse, erro
 	today := time.Now()
 	todayDate := today.Format("2006-01-02")
 	startDate := today.AddDate(0, 0, -days+1).Format("2006-01-02")
-	requestURL := fmt.Sprintf("%s/v1/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
+	requestURL := fmt.Sprintf("%s/compat/wakatime/v1/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
 	if strings.HasSuffix(apiURL, "/v1") {
 		requestURL = fmt.Sprintf("%s/users/current/summaries?start=%s&end=%s", apiURL, startDate, todayDate)
 	}
